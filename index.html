@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Sales Floor Tool</title>
-    <!-- Tailwind CSS para replicar la UI nativa al detalle -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Chart.js para las métricas reales del módulo inferior -->
+    <!-- Chart.js para métricas -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- HTML5 QR Code Scanner para activar la cámara real y leer códigos de barra -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -15,14 +17,12 @@
             -webkit-user-select: none;
             user-select: none;
         }
-        /* Colores corporativos exactos de la app de Walmart */
         .wm-navbar { background-color: #3276cd; }
         .wm-text-blue { color: #3276cd; }
         .wm-circle-gold { border-color: #f2b735; }
         .wm-btn-scan { background-color: #f2b735; }
         .status-bar { background-color: #2761ad; }
         
-        /* Animación suave para el cambio de pantallas */
         .page {
             display: none;
             transition: opacity 0.2s ease-in-out;
@@ -30,6 +30,15 @@
         .page.active {
             display: flex;
             flex-direction: column;
+        }
+        /* Estilos para el contenedor de la cámara */
+        #reader {
+            width: 100% !important;
+            border: none !important;
+        }
+        #reader video {
+            object-fit: cover !important;
+            border-radius: 8px;
         }
     </style>
 </head>
@@ -43,7 +52,6 @@
             <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M17 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/></svg>
         </div>
     </div>
-
 
     <!-- ========================================== -->
     <!-- VISTA 1: HOME (SALES FLOOR TOOL)           -->
@@ -76,11 +84,20 @@
 
         <!-- CONTENIDO PRINCIPAL HOME -->
         <main class="flex-1 max-w-md mx-auto w-full bg-[#f4f5f7]">
-            <!-- Zona de Escaneo Central -->
-            <div class="bg-white py-10 text-center flex flex-col items-center justify-center border-b border-gray-200">
+            
+            <!-- CONTENEDOR ESCÁNER DE CÁMARA (Se activa dinámicamente) -->
+            <div id="scanner-container" class="hidden bg-black p-4 text-center">
+                <div class="flex justify-between items-center text-white mb-2 px-2">
+                    <span class="text-sm font-bold">Escaneando código...</span>
+                    <button onclick="detenerCamara()" class="bg-red-600 text-xs px-3 py-1 rounded font-bold uppercase">Cerrar</button>
+                </div>
+                <div id="reader" class="bg-gray-900 rounded-lg overflow-hidden"></div>
+            </div>
+
+            <!-- Zona de Escaneo Central Standard -->
+            <div id="area-scan-central" class="bg-white py-10 text-center flex flex-col items-center justify-center border-b border-gray-200">
                 <p class="text-gray-900 text-lg font-medium mb-5 tracking-tight">Scan Item for Item Information</p>
-                <!-- Icono de Código de Barras Calcado de la imagen -->
-                <div onclick="dispararEscaneoSimulado()" class="border-4 border-gray-500 p-4 rounded-xs active:bg-gray-100 cursor-pointer transition-colors">
+                <div onclick="iniciarCamara()" class="border-4 border-gray-500 p-4 rounded-xs active:bg-gray-100 cursor-pointer transition-colors">
                     <svg class="w-24 h-16 text-gray-600" viewBox="0 0 24 16" fill="currentColor">
                         <rect x="1" width="2" height="16"/>
                         <rect x="4" width="1" height="16"/>
@@ -94,7 +111,7 @@
                 </div>
             </div>
 
-            <!-- Listado de Tareas (Or Select a Task) -->
+            <!-- Listado de Tareas -->
             <div class="bg-[#ededed] px-4 py-2.5 text-sm text-gray-500 font-bold tracking-wide border-b border-gray-200">
                 Or Select a Task
             </div>
@@ -114,7 +131,6 @@
             </div>
         </main>
     </div>
-
 
     <!-- ========================================== -->
     <!-- VISTA 2: DETALLE (ITEM INFO)               -->
@@ -151,7 +167,7 @@
             <div class="bg-white rounded-xs shadow-xs border border-gray-200 p-4">
                 <div class="flex justify-between items-start mb-2">
                     <div>
-                        <h2 id="view-name" class="text-lg font-bold tracking-tight text-gray-900 uppercase">PRODUCTO</h2>
+                        <h2 id="view-name" class="text-lg font-bold tracking-tight text-gray-900 uppercase">CARGANDO...</h2>
                         <p id="view-cat" class="text-xs text-gray-400 font-medium">Categoría</p>
                     </div>
                     <div class="flex items-center space-x-1 text-sm font-bold text-gray-900">
@@ -167,7 +183,7 @@
                 </div>
             </div>
 
-            <!-- Tarjeta 2: El Anillo Fiel de Inventario -->
+            <!-- Tarjeta 2: Inventario -->
             <div class="bg-white rounded-xs shadow-xs border border-gray-200 flex flex-col">
                 <div class="p-3 text-xs font-bold uppercase text-gray-400 tracking-wider">Inventory</div>
                 <div class="grid grid-cols-3 items-center justify-center px-4 py-2 text-center">
@@ -260,20 +276,21 @@
 
     <!-- BOTÓN FLOTANTE GLOBAL DE ESCANEO -->
     <div class="fixed bottom-4 right-4 z-50">
-        <button onclick="dispararEscaneoSimulado()" class="wm-btn-scan text-gray-900 font-bold px-5 py-3 rounded-full shadow-lg flex items-center space-x-2 uppercase text-sm tracking-wider active:scale-95 transition-transform">
+        <button onclick="iniciarCamara()" class="wm-btn-scan text-gray-900 font-bold px-5 py-3 rounded-full shadow-lg flex items-center space-x-2 uppercase text-sm tracking-wider active:scale-95 transition-transform">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h2v2H7V7zm0 4h2v2H7v-2zm0 4h2v2H7v-2zm4-8h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2zm4-8h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"/></svg>
             <span class="font-black">Scan</span>
         </button>
     </div>
 
     <script>
-        // Base de datos de persistencia local
+        // DB Persistente Local
         let baseDeDatos = JSON.parse(localStorage.getItem('wm_ims_database')) || {
             "480001610106": { upc: "480001610106", name: "JNJCORNBBQ", bin: "ESTANTE A-1", qty: 35, price: "2.37", size: "200G", color: "RED", cat: "Snacks / BBQ", added: "2026-06-03", removed: "2026-07-09" }
         };
 
         let upcActivo = null;
         let chartInstance = null;
+        let html5QrcodeScanner = null;
 
         document.addEventListener("DOMContentLoaded", () => {
             initClock();
@@ -289,72 +306,144 @@
             updateClock();
         }
 
-        // CONTROLADOR DE NAVEGACIÓN ENTRE PANTALLAS
         function navegarA(pageId) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(`page-${pageId}`).classList.add('active');
             window.scrollTo(0, 0);
+            if (pageId === 'home') detenerCamara();
         }
 
         function focusSearch() { document.getElementById('search-input-home').focus(); }
         function focusSearchDetail() { document.getElementById('search-input-detail').focus(); }
 
-        // PROCESADOR DE BÚSQUEDA ASÍNCRONO INTERNACIONAL
-        async function procesarBusqueda(contexto) {
+        // ==========================================
+        // CONTROL DE CÁMARA (HTML5-QRCODE)
+        // ==========================================
+        function iniciarCamara() {
+            navegarA('home');
+            document.getElementById('scanner-container').classList.remove('hidden');
+            document.getElementById('area-scan-central').classList.add('hidden');
+
+            if (!html5QrcodeScanner) {
+                // Configuramos para capturar códigos de barra tradicionales (EAN, UPC, etc.)
+                html5QrcodeScanner = new Html5Qrcode("reader");
+            }
+
+            const config = { 
+                fps: 20, 
+                qrbox: { width: 300, height: 150 }, // Rectángulo alargado ideal para códigos de barras
+                formatsToSupport: [ 
+                    Html5QrcodeSupportedFormats.EAN_13, 
+                    Html5QrcodeSupportedFormats.EAN_8, 
+                    Html5QrcodeSupportedFormats.UPC_A, 
+                    Html5QrcodeSupportedFormats.UPC_E, 
+                    Html5QrcodeSupportedFormats.CODE_128 
+                ]
+            };
+
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, // Prioriza cámara trasera
+                config,
+                (decodedText) => {
+                    // ÉXITO AL ESCANEAR
+                    detenerCamara();
+                    ejecutarEscaneoDirecto(decodedText);
+                },
+                (errorMessage) => {
+                    // Silenciar errores continuos de foco de la cámara
+                }
+            ).catch(err => {
+                alert("Error al acceder a la cámara: " + err);
+                detenerCamara();
+            });
+        }
+
+        function detenerCamara() {
+            document.getElementById('scanner-container').classList.add('hidden');
+            document.getElementById('area-scan-central').classList.remove('hidden');
+            if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
+                html5QrcodeScanner.stop().catch(err => console.log("Error al detener", err));
+            }
+        }
+
+        function ejecutarEscaneoDirecto(upc) {
+            if(!upc) return;
+            procesarBusquedaManualOEscaneo(upc);
+        }
+
+        function procesarBusqueda(contexto) {
             const inputId = contexto === 'home' ? 'search-input-home' : 'search-input-detail';
             const upc = document.getElementById(inputId).value.trim();
             if(!upc) return;
-
-            // Limpiar inputs
+            
             document.getElementById('search-input-home').value = "";
             document.getElementById('search-input-detail').value = "";
+            
+            procesarBusquedaManualOEscaneo(upc);
+        }
 
+        // CONTROLADOR DE BÚSQUEDA INTEGRADO CON API GLOBAL
+        async function procesarBusquedaManualOEscaneo(upc) {
+            upcActivo = upc;
+            navegarA('detail');
+
+            // 1. Verificar si existe localmente
             if(baseDeDatos[upc]) {
                 renderProducto(upc);
-                navegarA('detail');
                 return;
             }
 
-            // Consulta externa a base global si es un código nuevo
+            // 2. Colocar pantalla en estado de carga inmediata
+            setupFichaCarga(upc);
+
+            // 3. Consultar Base de datos global de productos
             try {
                 const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${upc}.json`);
                 const data = await res.json();
                 
                 if(data.status === 1 && data.product) {
                     const p = data.product;
-                    document.getElementById('form-name').value = (p.product_name_es || p.product_name || "NUEVO ARTÍCULO").toUpperCase().substring(0, 18);
-                    document.getElementById('form-price').value = "1.99";
-                    upcActivo = upc;
-                    setupFichaLimpia(upc);
-                    navegarA('detail');
+                    // Extraer características de la API de inmediato
+                    const nombreEncontrado = (p.product_name_es || p.product_name || "PRODUCTO NUEVO").toUpperCase().substring(0, 22);
+                    const categoriaEncontrada = (p.categories_tags && p.categories_tags[0] ? p.categories_tags[0].replace('en:', '') : "Alimentos / General").toUpperCase();
+                    const tamañoEncontrado = p.quantity || "N/A";
+                    
+                    // Asignar los datos dinámicamente a la tarjeta de arriba de inmediato
+                    document.getElementById('view-name').innerText = nombreEncontrado;
+                    document.getElementById('view-cat').innerText = categoriaEncontrada;
+                    document.getElementById('view-size').innerText = tamañoEncontrado;
+                    document.getElementById('view-price').innerText = "$ 1.50"; // Valor base por defecto
+                    
+                    // Auto-rellenar formulario inferior para guardado fácil
+                    document.getElementById('form-name').value = nombreEncontrado;
+                    document.getElementById('form-price').value = "1.50";
                 } else {
+                    // Si el código no está en la base global, dejamos campos editables limpios
+                    document.getElementById('view-name').innerText = "CÓDIGO NUEVO (SIN REGISTRO)";
+                    document.getElementById('view-cat').innerText = "REGISTRE ABAJO";
                     document.getElementById('form-name').value = "";
                     document.getElementById('form-price').value = "";
-                    upcActivo = upc;
-                    setupFichaLimpia(upc);
-                    navegarA('detail');
-                    alert("UPC Nuevo: Registre descripción y estante en el bloque inferior.");
                 }
             } catch (e) {
-                upcActivo = upc;
-                setupFichaLimpia(upc);
-                navegarA('detail');
+                document.getElementById('view-name').innerText = "CÓDIGO NUEVO";
+                document.getElementById('view-cat').innerText = "Soporte Offline";
             }
         }
 
-        function setupFichaLimpia(upc) {
-            document.getElementById('view-name').innerText = "UPC SIN CONFIRMAR";
-            document.getElementById('view-cat').innerText = "Pendiente de Guardado";
+        function setupFichaCarga(upc) {
+            document.getElementById('view-name').innerText = "BUSCANDO DATOS...";
+            document.getElementById('view-cat').innerText = "Consultando redes...";
             document.getElementById('view-price').innerText = "$ 0.00";
             document.getElementById('view-upc').innerText = upc;
             document.getElementById('view-bin').innerText = "PENDIENTE";
+            document.getElementById('view-size').innerText = "--";
+            document.getElementById('view-color').innerText = "NEW";
             document.getElementById('stock-bin').innerText = "0";
             document.getElementById('stock-onhand').innerText = "0";
             document.getElementById('stock-floor').innerText = "0";
         }
 
         function renderProducto(upc) {
-            upcActivo = upc;
             const item = baseDeDatos[upc];
             
             document.getElementById('view-name').innerText = item.name;
@@ -388,20 +477,25 @@
                 bin: document.getElementById('form-bin').value,
                 qty: baseDeDatos[upcActivo]?.qty || 1,
                 price: document.getElementById('form-price').value || "1.00",
-                size: baseDeDatos[upcActivo]?.size || "200G",
-                color: baseDeDatos[upcActivo]?.color || "RED",
-                cat: baseDeDatos[upcActivo]?.cat || "Despensa",
+                size: document.getElementById('view-size').innerText !== "--" ? document.getElementById('view-size').innerText : "200G",
+                color: baseDeDatos[upcActivo]?.color || "TRACKED",
+                cat: document.getElementById('view-cat').innerText,
                 added: baseDeDatos[upcActivo]?.added || today,
                 removed: baseDeDatos[upcActivo]?.removed || "--"
             };
 
             localStorage.setItem('wm_ims_database', JSON.stringify(baseDeDatos));
             renderProducto(upcActivo);
-            alert("Guardado en Base de Datos de Alacena");
+            alert("Producto guardado y registrado con éxito.");
         }
 
         function modificarCantidad(cambio) {
-            if(!upcActivo || !baseDeDatos[upcActivo]) return;
+            if(!upcActivo) return;
+            
+            if(!baseDeDatos[upcActivo]) {
+                alert("Primero guarde el producto abajo para poder modificar inventario.");
+                return;
+            }
             
             let item = baseDeDatos[upcActivo];
             item.qty = Math.max(0, item.qty + cambio);
@@ -420,17 +514,6 @@
             }
         }
 
-        function dispararEscaneoSimulado() {
-            // Carga instantánea y salto de pantalla directo simulando el hardware Zebra
-            if(document.getElementById('page-home').classList.contains('active')) {
-                document.getElementById('search-input-home').value = "480001610106";
-                procesarBusqueda('home');
-            } else {
-                document.getElementById('search-input-detail').value = "480001610106";
-                procesarBusqueda('detail');
-            }
-        }
-
         function initChart() {
             const ctx = document.getElementById('miniChart').getContext('2d');
             chartInstance = new Chart(ctx, {
@@ -438,7 +521,7 @@
                 data: {
                     labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
                     datasets: [{
-                        data: [4, 2, 7, 1, 5, 35, 3],
+                        data: [4, 2, 7, 1, 5, 12, 3],
                         borderColor: '#3276cd',
                         backgroundColor: 'rgba(50, 118, 205, 0.08)',
                         fill: true,
