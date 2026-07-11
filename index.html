@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Sales Floor Tool</title>
+    <!-- Tailwind CSS para replicar la UI nativa al detalle -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Chart.js para las métricas reales del módulo inferior -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ededed;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        /* Colores corporativos exactos de la app de Walmart */
+        .wm-navbar { background-color: #3276cd; }
+        .wm-text-blue { color: #3276cd; }
+        .wm-circle-gold { border-color: #f2b735; }
+        .wm-btn-scan { background-color: #f2b735; }
+        .status-bar { background-color: #2761ad; }
+        
+        /* Animación suave para el cambio de pantallas */
+        .page {
+            display: none;
+            transition: opacity 0.2s ease-in-out;
+        }
+        .page.active {
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- BARRA DE ESTADO SIMULADA DE ANDROID -->
+    <div class="status-bar text-white text-[11px] px-4 py-1 flex justify-between items-center font-medium z-50">
+        <span id="live-clock">4:42</span>
+        <div class="flex items-center space-x-1.5">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M17 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/></svg>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- VISTA 1: HOME (SALES FLOOR TOOL)           -->
+    <!-- ========================================== -->
+    <div id="page-home" class="page active min-h-[calc(100vh-20px)]">
+        <!-- NAVBAR HOME -->
+        <header class="wm-navbar text-white px-3 py-3.5 shadow-sm flex items-center justify-between sticky top-0 z-50">
+            <div class="flex items-center space-x-5">
+                <button class="active:opacity-60">
+                    <svg class="w-6 h-6 stroke-current stroke-2" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+                <h1 class="text-xl font-medium tracking-wide">Sales Floor Tool</h1>
+            </div>
+            <div class="flex items-center space-x-5">
+                <button onclick="focusSearch()" class="active:opacity-60">
+                    <svg class="w-5 h-5 stroke-current stroke-2" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </button>
+                <button class="active:opacity-60">
+                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s-.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s-.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- INPUT DE BÚSQUEDA DEL HOME -->
+        <div class="bg-white p-2 shadow-xs border-b border-gray-200 flex gap-2 max-w-md mx-auto w-full">
+            <input type="text" id="search-input-home" placeholder="Escribir UPC / Barra..." 
+                class="w-full bg-gray-100 px-3 py-2 rounded text-sm font-mono focus:outline-none border border-gray-300">
+            <button onclick="procesarBusqueda('home')" class="wm-navbar text-white px-4 py-2 rounded text-xs font-bold uppercase tracking-wider">OK</button>
+        </div>
+
+        <!-- CONTENIDO PRINCIPAL HOME -->
+        <main class="flex-1 max-w-md mx-auto w-full bg-[#f4f5f7]">
+            <!-- Zona de Escaneo Central -->
+            <div class="bg-white py-10 text-center flex flex-col items-center justify-center border-b border-gray-200">
+                <p class="text-gray-900 text-lg font-medium mb-5 tracking-tight">Scan Item for Item Information</p>
+                <!-- Icono de Código de Barras Calcado de la imagen -->
+                <div onclick="dispararEscaneoSimulado()" class="border-4 border-gray-500 p-4 rounded-xs active:bg-gray-100 cursor-pointer transition-colors">
+                    <svg class="w-24 h-16 text-gray-600" viewBox="0 0 24 16" fill="currentColor">
+                        <rect x="1" width="2" height="16"/>
+                        <rect x="4" width="1" height="16"/>
+                        <rect x="6" width="3" height="16"/>
+                        <rect x="10" width="1" height="16"/>
+                        <rect x="12" width="2" height="16"/>
+                        <rect x="15" width="1" height="16"/>
+                        <rect x="17" width="3" height="16"/>
+                        <rect x="21" width="2" height="16"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Listado de Tareas (Or Select a Task) -->
+            <div class="bg-[#ededed] px-4 py-2.5 text-sm text-gray-500 font-bold tracking-wide border-b border-gray-200">
+                Or Select a Task
+            </div>
+            <div class="bg-white divide-y divide-gray-200 text-base font-normal text-gray-800">
+                <div class="px-4 py-4 flex justify-between items-center active:bg-gray-50">
+                    <span>Section Work</span>
+                    <span class="text-gray-400 font-bold">&#10095;</span>
+                </div>
+                <div class="px-4 py-4 flex justify-between items-center active:bg-gray-50">
+                    <span>Modular/Aisle Maintenance</span>
+                    <span class="text-gray-400 font-bold">&#10095;</span>
+                </div>
+                <div class="px-4 py-4 flex justify-between items-center active:bg-gray-50">
+                    <span>Shelf Availability</span>
+                    <span class="text-gray-400 font-bold">&#10095;</span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- VISTA 2: DETALLE (ITEM INFO)               -->
+    <!-- ========================================== -->
+    <div id="page-detail" class="page min-h-[calc(100vh-20px)]">
+        <!-- NAVBAR DETALLE -->
+        <header class="wm-navbar text-white px-3 py-3.5 shadow-sm flex items-center justify-between sticky top-0 z-50">
+            <div class="flex items-center space-x-5">
+                <button onclick="navegarA('home')" class="active:opacity-60">
+                    <svg class="w-6 h-6 stroke-current stroke-2" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                </button>
+                <h1 class="text-xl font-medium tracking-wide">Item Info</h1>
+            </div>
+            <div class="flex items-center space-x-5">
+                <button onclick="focusSearchDetail()" class="active:opacity-60">
+                    <svg class="w-5 h-5 stroke-current stroke-2" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </button>
+                <button class="active:opacity-60">
+                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s-.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s-.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- INPUT DE BÚSQUEDA DETALLE -->
+        <div class="bg-white p-2 shadow-xs border-b border-gray-200 flex gap-2 max-w-md mx-auto w-full">
+            <input type="text" id="search-input-detail" placeholder="Escribir UPC / Barra..." 
+                class="w-full bg-gray-100 px-3 py-2 rounded text-sm font-mono focus:outline-none border border-gray-300">
+            <button onclick="procesarBusqueda('detail')" class="wm-navbar text-white px-4 py-2 rounded text-xs font-bold uppercase tracking-wider">OK</button>
+        </div>
+
+        <!-- CONTENEDOR NATIVO ITEM INFO -->
+        <main class="flex-1 p-3 space-y-3 overflow-y-auto max-w-md mx-auto w-full">
+            <!-- Tarjeta 1: General -->
+            <div class="bg-white rounded-xs shadow-xs border border-gray-200 p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <h2 id="view-name" class="text-lg font-bold tracking-tight text-gray-900 uppercase">PRODUCTO</h2>
+                        <p id="view-cat" class="text-xs text-gray-400 font-medium">Categoría</p>
+                    </div>
+                    <div class="flex items-center space-x-1 text-sm font-bold text-gray-900">
+                        <span id="view-price">$ 0.00</span>
+                        <svg class="w-4 h-4 fill-blue-600" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h-2v2h2v4zm0-8h-2V7h2v2z"/></svg>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-y-1.5 gap-x-4 text-xs font-medium text-gray-500 mt-4 pt-3 border-t border-gray-100">
+                    <div class="flex justify-between"><span>UPC</span><span id="view-upc" class="font-mono text-gray-900">--</span></div>
+                    <div class="flex justify-between"><span>Ubicación</span><span id="view-bin" class="text-gray-900 font-bold">--</span></div>
+                    <div class="flex justify-between"><span>Detalle</span><span id="view-size" class="text-gray-900">--</span></div>
+                    <div class="flex justify-between"><span>Color/Tag</span><span id="view-color" class="text-gray-900">--</span></div>
+                </div>
+            </div>
+
+            <!-- Tarjeta 2: El Anillo Fiel de Inventario -->
+            <div class="bg-white rounded-xs shadow-xs border border-gray-200 flex flex-col">
+                <div class="p-3 text-xs font-bold uppercase text-gray-400 tracking-wider">Inventory</div>
+                <div class="grid grid-cols-3 items-center justify-center px-4 py-2 text-center">
+                    <div>
+                        <span id="stock-bin" class="text-3xl font-light text-gray-800 block">0</span>
+                        <span class="text-xs text-gray-400 font-medium">Bin</span>
+                    </div>
+                    <div class="flex flex-col items-center justify-center">
+                        <div class="w-20 h-20 rounded-full border-4 wm-circle-gold flex flex-col items-center justify-center bg-white shadow-xs">
+                            <span id="stock-onhand" class="text-3xl font-medium text-gray-900 leading-none">0</span>
+                            <span class="text-[10px] text-gray-500 font-medium mt-0.5">On Hand</span>
+                        </div>
+                    </div>
+                    <div>
+                        <span id="stock-floor" class="text-3xl font-light text-gray-800 block">0</span>
+                        <span class="text-xs text-gray-400 font-medium">Sales Floor</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 text-xs font-bold text-gray-500 px-4 py-3 border-t border-gray-100 mt-2">
+                    <div class="flex items-center space-x-2 justify-center border-r border-gray-100">
+                        <svg class="w-4 h-4 text-gray-400 fill-current" viewBox="0 0 24 24"><path d="M22 6.07a1 1 0 0 0-.5-.86l-9-5.2a1 1 0 0 0-1 0l-9 5.2a1 1 0 0 0-.5.86v10.4a1 1 0 0 0 .5.86l9 5.2a1 1 0 0 0 1 0l9-5.2a1 1 0 0 0 .5-.86V6.07zM12 3l7 4.04-7 4.04-7-4.04L12 3z"/></svg>
+                        <span>CASE PACK 1</span>
+                    </div>
+                    <div class="flex items-center space-x-2 justify-center wm-text-blue">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1 9H6v-2h12v2z"/></svg>
+                        <span class="uppercase">SHELF CAP 10</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 text-center border-t border-gray-100 text-xs font-bold wm-text-blue">
+                    <button onclick="modificarCantidad(-1)" class="py-3 border-r border-gray-100 active:bg-gray-50 flex items-center justify-center space-x-1 uppercase">
+                        <span>➖ Descontar 1</span>
+                    </button>
+                    <button onclick="modificarCantidad(1)" class="py-3 active:bg-gray-50 flex items-center justify-center space-x-1 uppercase">
+                        <span>➕ Agregar 1</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tarjeta 3: Replenishment -->
+            <div class="bg-white rounded-xs shadow-xs border border-gray-200 p-4">
+                <div class="text-xs font-bold uppercase text-gray-400 tracking-wider mb-3">Replenishment / Historial</div>
+                <div class="grid grid-cols-2 text-center pb-2">
+                    <div>
+                        <span class="text-[10px] font-bold text-gray-400 block uppercase">Último Agregado</span>
+                        <span id="date-added" class="text-xl font-light text-gray-800 block my-0.5">--</span>
+                    </div>
+                    <div class="border-l border-gray-100">
+                        <span class="text-[10px] font-bold text-gray-400 block uppercase">Último Consumo</span>
+                        <span id="date-removed" class="text-xl font-light text-gray-800 block my-0.5">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta 4: Guardar y Re-binear -->
+            <div class="bg-white rounded-xs shadow-xs border border-gray-200 p-4">
+                <div class="text-xs font-bold uppercase text-gray-400 tracking-wider mb-3">Registro e Historial de BIN</div>
+                <form id="save-form" onsubmit="registrarProducto(event)" class="space-y-2.5 text-xs">
+                    <div>
+                        <label class="block font-bold text-gray-500 mb-1">Nombre Comercial</label>
+                        <input type="text" id="form-name" required class="w-full border border-gray-300 p-2 rounded bg-gray-50 text-gray-900 focus:outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-bold text-gray-500 mb-1">Ubicación Física</label>
+                            <select id="form-bin" class="w-full border border-gray-300 p-2 rounded bg-white text-gray-900 focus:outline-none">
+                                <option value="ESTANTE A-1">Estante A-1</option>
+                                <option value="ESTANTE B-3">Estante B-3</option>
+                                <option value="DESPENSA ALTA">Despensa Alta</option>
+                                <option value="REFRIGERADOR">Refrigerador</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-gray-500 mb-1">Precio Estimado</label>
+                            <input type="text" id="form-price" class="w-full border border-gray-300 p-2 rounded bg-gray-50 text-gray-900 focus:outline-none">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full wm-navbar text-white font-bold py-2.5 rounded uppercase tracking-wider text-center active:opacity-90">
+                        Confirmar Cambios
+                    </button>
+                </form>
+            </div>
+
+            <!-- Tarjeta 5: Gráfico -->
+            <div class="bg-white rounded-xs shadow-xs border border-gray-200 p-4 mb-16">
+                <div class="text-xs font-bold uppercase text-gray-400 tracking-wider mb-2">Métricas de Uso Real</div>
+                <div class="h-32 w-full"><canvas id="miniChart"></canvas></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- BOTÓN FLOTANTE GLOBAL DE ESCANEO -->
+    <div class="fixed bottom-4 right-4 z-50">
+        <button onclick="dispararEscaneoSimulado()" class="wm-btn-scan text-gray-900 font-bold px-5 py-3 rounded-full shadow-lg flex items-center space-x-2 uppercase text-sm tracking-wider active:scale-95 transition-transform">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h2v2H7V7zm0 4h2v2H7v-2zm0 4h2v2H7v-2zm4-8h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2zm4-8h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"/></svg>
+            <span class="font-black">Scan</span>
+        </button>
+    </div>
+
+    <script>
+        // Base de datos de persistencia local
+        let baseDeDatos = JSON.parse(localStorage.getItem('wm_ims_database')) || {
+            "480001610106": { upc: "480001610106", name: "JNJCORNBBQ", bin: "ESTANTE A-1", qty: 35, price: "2.37", size: "200G", color: "RED", cat: "Snacks / BBQ", added: "2026-06-03", removed: "2026-07-09" }
+        };
+
+        let upcActivo = null;
+        let chartInstance = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            initClock();
+            initChart();
+        });
+
+        function initClock() {
+            const updateClock = () => {
+                const now = new Date();
+                document.getElementById('live-clock').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
+            };
+            setInterval(updateClock, 1000);
+            updateClock();
+        }
+
+        // CONTROLADOR DE NAVEGACIÓN ENTRE PANTALLAS
+        function navegarA(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(`page-${pageId}`).classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function focusSearch() { document.getElementById('search-input-home').focus(); }
+        function focusSearchDetail() { document.getElementById('search-input-detail').focus(); }
+
+        // PROCESADOR DE BÚSQUEDA ASÍNCRONO INTERNACIONAL
+        async function procesarBusqueda(contexto) {
+            const inputId = contexto === 'home' ? 'search-input-home' : 'search-input-detail';
+            const upc = document.getElementById(inputId).value.trim();
+            if(!upc) return;
+
+            // Limpiar inputs
+            document.getElementById('search-input-home').value = "";
+            document.getElementById('search-input-detail').value = "";
+
+            if(baseDeDatos[upc]) {
+                renderProducto(upc);
+                navegarA('detail');
+                return;
+            }
+
+            // Consulta externa a base global si es un código nuevo
+            try {
+                const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${upc}.json`);
+                const data = await res.json();
+                
+                if(data.status === 1 && data.product) {
+                    const p = data.product;
+                    document.getElementById('form-name').value = (p.product_name_es || p.product_name || "NUEVO ARTÍCULO").toUpperCase().substring(0, 18);
+                    document.getElementById('form-price').value = "1.99";
+                    upcActivo = upc;
+                    setupFichaLimpia(upc);
+                    navegarA('detail');
+                } else {
+                    document.getElementById('form-name').value = "";
+                    document.getElementById('form-price').value = "";
+                    upcActivo = upc;
+                    setupFichaLimpia(upc);
+                    navegarA('detail');
+                    alert("UPC Nuevo: Registre descripción y estante en el bloque inferior.");
+                }
+            } catch (e) {
+                upcActivo = upc;
+                setupFichaLimpia(upc);
+                navegarA('detail');
+            }
+        }
+
+        function setupFichaLimpia(upc) {
+            document.getElementById('view-name').innerText = "UPC SIN CONFIRMAR";
+            document.getElementById('view-cat').innerText = "Pendiente de Guardado";
+            document.getElementById('view-price').innerText = "$ 0.00";
+            document.getElementById('view-upc').innerText = upc;
+            document.getElementById('view-bin').innerText = "PENDIENTE";
+            document.getElementById('stock-bin').innerText = "0";
+            document.getElementById('stock-onhand').innerText = "0";
+            document.getElementById('stock-floor').innerText = "0";
+        }
+
+        function renderProducto(upc) {
+            upcActivo = upc;
+            const item = baseDeDatos[upc];
+            
+            document.getElementById('view-name').innerText = item.name;
+            document.getElementById('view-cat').innerText = item.cat || "Alacena General";
+            document.getElementById('view-price').innerText = `$ ${item.price}`;
+            document.getElementById('view-upc').innerText = item.upc;
+            document.getElementById('view-bin').innerText = item.bin;
+            document.getElementById('view-size').innerText = item.size || "200G";
+            document.getElementById('view-color').innerText = item.color || "RED";
+
+            document.getElementById('stock-bin').innerText = item.qty + 1;
+            document.getElementById('stock-onhand').innerText = item.qty;
+            document.getElementById('stock-floor').innerText = "-1";
+
+            document.getElementById('date-added').innerText = item.added || "N/A";
+            document.getElementById('date-removed').innerText = item.removed || "N/A";
+
+            document.getElementById('form-name').value = item.name;
+            document.getElementById('form-bin').value = item.bin;
+            document.getElementById('form-price').value = item.price;
+        }
+
+        function registrarProducto(e) {
+            e.preventDefault();
+            if(!upcActivo) return;
+
+            const today = new Date().toISOString().split('T')[0];
+            baseDeDatos[upcActivo] = {
+                upc: upcActivo,
+                name: document.getElementById('form-name').value.trim().toUpperCase(),
+                bin: document.getElementById('form-bin').value,
+                qty: baseDeDatos[upcActivo]?.qty || 1,
+                price: document.getElementById('form-price').value || "1.00",
+                size: baseDeDatos[upcActivo]?.size || "200G",
+                color: baseDeDatos[upcActivo]?.color || "RED",
+                cat: baseDeDatos[upcActivo]?.cat || "Despensa",
+                added: baseDeDatos[upcActivo]?.added || today,
+                removed: baseDeDatos[upcActivo]?.removed || "--"
+            };
+
+            localStorage.setItem('wm_ims_database', JSON.stringify(baseDeDatos));
+            renderProducto(upcActivo);
+            alert("Guardado en Base de Datos de Alacena");
+        }
+
+        function modificarCantidad(cambio) {
+            if(!upcActivo || !baseDeDatos[upcActivo]) return;
+            
+            let item = baseDeDatos[upcActivo];
+            item.qty = Math.max(0, item.qty + cambio);
+            
+            const today = new Date().toISOString().split('T')[0];
+            if(cambio > 0) item.added = today;
+            if(cambio < 0) item.removed = today;
+
+            baseDeDatos[upcActivo] = item;
+            localStorage.setItem('wm_ims_database', JSON.stringify(baseDeDatos));
+            renderProducto(upcActivo);
+
+            if(chartInstance) {
+                chartInstance.data.datasets[0].data[5] += Math.abs(cambio);
+                chartInstance.update();
+            }
+        }
+
+        function dispararEscaneoSimulado() {
+            // Carga instantánea y salto de pantalla directo simulando el hardware Zebra
+            if(document.getElementById('page-home').classList.contains('active')) {
+                document.getElementById('search-input-home').value = "480001610106";
+                procesarBusqueda('home');
+            } else {
+                document.getElementById('search-input-detail').value = "480001610106";
+                procesarBusqueda('detail');
+            }
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('miniChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+                    datasets: [{
+                        data: [4, 2, 7, 1, 5, 35, 3],
+                        borderColor: '#3276cd',
+                        backgroundColor: 'rgba(50, 118, 205, 0.08)',
+                        fill: true,
+                        tension: 0.2,
+                        borderWidth: 2,
+                        pointRadius: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        x: { grid: { display: false }, ticks: { font: { size: 9 } } },
+                        y: { grid: { color: '#f3f3f3' }, ticks: { font: { size: 9 } } }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
