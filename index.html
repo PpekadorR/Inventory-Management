@@ -115,18 +115,42 @@
                 Or Select a Task
             </div>
             <div class="bg-white divide-y divide-gray-200 text-base font-normal text-gray-800">
-                <div class="px-4 py-4 flex justify-between items-center active:bg-gray-50">
+                <div class="px-4 py-4 flex justify-between items-center active:bg-gray-50 cursor-pointer">
                     <span>Section Work</span>
                     <span class="text-gray-400 font-bold">&#10095;</span>
                 </div>
-                <div class="px-4 py-4 flex justify-between items-center active:bg-gray-50">
+                <div class="px-4 py-4 flex justify-between items-center active:bg-gray-50 cursor-pointer">
                     <span>Modular/Aisle Maintenance</span>
                     <span class="text-gray-400 font-bold">&#10095;</span>
                 </div>
-                <div class="px-4 py-4 flex justify-between items-center active:bg-gray-50">
+                <div onclick="abrirShelfAvailability()" class="px-4 py-4 flex justify-between items-center active:bg-gray-50 cursor-pointer wm-text-blue font-bold">
                     <span>Shelf Availability</span>
                     <span class="text-gray-400 font-bold">&#10095;</span>
                 </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VISTA 3: SHELF AVAILABILITY (UBICACIONES)  -->
+    <!-- ========================================== -->
+    <div id="page-shelf" class="page min-h-[calc(100vh-20px)]">
+        <header class="wm-navbar text-white px-3 py-3.5 shadow-sm flex items-center sticky top-0 z-50">
+            <button onclick="navegarA('home')" class="active:opacity-60 mr-5">
+                <svg class="w-6 h-6 stroke-current stroke-2" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            </button>
+            <h1 id="shelf-title" class="text-xl font-medium tracking-wide">Ubicaciones (Bins)</h1>
+        </header>
+
+        <main class="flex-1 max-w-md mx-auto w-full bg-[#f4f5f7] p-3">
+            <!-- Botón de retroceso dinámico dentro de la sección -->
+            <button id="btn-back-to-bins" onclick="renderListaUbicaciones()" class="hidden mb-3 w-full bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded text-xs uppercase tracking-wider text-center active:bg-gray-300">
+                ⬅️ Volver a todas las Ubicaciones
+            </button>
+
+            <!-- Lista de elementos dinámicos -->
+            <div id="shelf-content-list" class="bg-white rounded border border-gray-200 divide-y divide-gray-200 text-sm font-medium text-gray-800 shadow-sm">
+                <!-- Se rellena vía JavaScript -->
             </div>
         </main>
     </div>
@@ -138,7 +162,7 @@
         <!-- NAVBAR DETALLE -->
         <header class="wm-navbar text-white px-3 py-3.5 shadow-sm flex items-center justify-between sticky top-0 z-50">
             <div class="flex items-center space-x-5">
-                <button onclick="navegarA('home')" class="active:opacity-60">
+                <button onclick="volverDesdeDetalle()" class="active:opacity-60">
                     <svg class="w-6 h-6 stroke-current stroke-2" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 </button>
                 <h1 class="text-xl font-medium tracking-wide">Item Info</h1>
@@ -271,9 +295,13 @@
             "7801620006740": { upc: "7801620006740", name: "PEPSI DESECHABLE 3 LITROS", bin: "ESTANTE A-1", qty: 12, price: "2.990", size: "3 L", color: "CL", cat: "Bebidas / Sodas" }
         };
 
+        // Bins por defecto si la base de datos está vacía en esas secciones
+        const binsPorDefecto = ["ESTANTE A-1", "ESTANTE B-3", "DESPENSA ALTA", "REFRIGERADOR"];
+        
         let upcActivo = null;
         let chartInstance = null;
         let html5QrcodeScanner = null;
+        let origenNavegacion = 'home'; // Controla el botón de retroceso de Item Info
 
         document.addEventListener("DOMContentLoaded", () => {
             initClock();
@@ -296,13 +324,98 @@
             if (pageId === 'home') detenerCamara();
         }
 
+        function volverDesdeDetalle() {
+            navegarA(origenNavegacion);
+        }
+
         function focusSearch() { document.getElementById('search-input-home').focus(); }
         function focusSearchDetail() { document.getElementById('search-input-detail').focus(); }
+
+        // ==========================================
+        // MÓDULO: SHELF AVAILABILITY NAVEGABLE
+        // ==========================================
+        function abrirShelfAvailability() {
+            origenNavegacion = 'shelf';
+            navegarA('shelf');
+            renderListaUbicaciones();
+        }
+
+        function renderListaUbicaciones() {
+            document.getElementById('shelf-title').innerText = "Ubicaciones (Bins)";
+            document.getElementById('btn-back-to-bins').classList.add('hidden');
+            
+            // Obtener ubicaciones únicas de la base de datos más las por defecto
+            const binsExistentes = Object.values(baseDeDatos).map(item => item.bin);
+            const todasLasUbicaciones = [...new Set([...binsPorDefecto, ...binsExistentes])];
+            
+            const container = document.getElementById('shelf-content-list');
+            container.innerHTML = "";
+
+            todasLasUbicaciones.forEach(bin => {
+                // Contar cuántos productos hay en esta ubicación
+                const cantProductos = Object.values(baseDeDatos).filter(item => item.bin === bin).length;
+
+                const div = document.createElement('div');
+                div.className = "px-4 py-4 flex justify-between items-center active:bg-gray-100 cursor-pointer";
+                div.onclick = () => renderProductosDeUbicacion(bin);
+                div.innerHTML = `
+                    <div class="flex flex-col">
+                        <span class="font-bold text-gray-900">${bin}</span>
+                        <span class="text-xs text-gray-400">${cantProductos} productos registrados</span>
+                    </div>
+                    <span class="text-blue-600 font-bold">&#10095;</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderProductosDeUbicacion(binNombre) {
+            document.getElementById('shelf-title').innerText = binNombre;
+            document.getElementById('btn-back-to-bins').classList.remove('hidden');
+
+            const container = document.getElementById('shelf-content-list');
+            container.innerHTML = "";
+
+            // Filtrar productos que pertenezcan a este bin
+            const productosFiltrados = Object.values(baseDeDatos).filter(item => item.bin === binNombre);
+
+            if(productosFiltrados.length === 0) {
+                container.innerHTML = `
+                    <div class="p-6 text-center text-gray-400 italic">
+                        No hay productos guardados en esta ubicación.
+                    </div>
+                `;
+                return;
+            }
+
+            productosFiltrados.forEach(prod => {
+                const div = document.createElement('div');
+                div.className = "px-4 py-3.5 flex justify-between items-center active:bg-gray-100 cursor-pointer";
+                div.onclick = () => {
+                    origenNavegacion = 'shelf'; 
+                    procesarBusquedaManualOEscaneo(prod.upc);
+                };
+                div.innerHTML = `
+                    <div class="flex flex-col w-[75%]">
+                        <span class="font-bold text-gray-900 truncate uppercase text-xs tracking-tight">${prod.name}</span>
+                        <span class="text-[11px] text-gray-400 font-mono mt-0.5">UPC: ${prod.upc}</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-full font-bold block text-center min-w-[55px]">
+                            ${prod.qty} Un.
+                        </span>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
 
         // ==========================================
         // CÁMARA LECTOR NATIVO
         // ==========================================
         function iniciarCamara() {
+            origenNavegacion = 'home';
             navegarA('home');
             document.getElementById('scanner-container').classList.remove('hidden');
             document.getElementById('area-scan-central').classList.add('hidden');
@@ -352,6 +465,7 @@
             document.getElementById('search-input-home').value = "";
             document.getElementById('search-input-detail').value = "";
             
+            origenNavegacion = contexto === 'home' ? 'home' : 'shelf';
             procesarBusquedaManualOEscaneo(upc);
         }
 
@@ -376,21 +490,18 @@
                 if(data.status === 1 && data.product) {
                     const p = data.product;
                     
-                    // Concatena Marca + Descripción + Variante o cantidad para evitar solo el nombre base
                     const marca = p.brands ? p.brands.split(',')[0] : "";
                     const desc = p.product_name_es || p.product_name || "";
                     const extra = p.generic_name_es || "";
                     const medida = p.quantity || "";
 
                     let nombreCompleto = `${marca} ${desc} ${extra}`.trim();
-                    // Limpieza de texto duplicado continuo
                     nombreCompleto = [...new Set(nombreCompleto.split(' '))].join(' ').toUpperCase().substring(0, 36);
 
                     if(nombreCompleto.length < 5) nombreCompleto = "PRODUCTO DETECTADO";
 
                     const categoria = (p.categories_tags && p.categories_tags[0] ? p.categories_tags[0].replace('en:', '') : "Líder / General").toUpperCase();
                     
-                    // Cálculo inteligente del valor comercial estimado en el Líder chileno (CLP)
                     let precioEstimadoLider = "1.190"; 
                     const txt = nombreCompleto.toLowerCase();
                     
@@ -401,14 +512,12 @@
                     else if (txt.includes("arroz") || txt.includes("fideos")) precioEstimadoLider = "1.450";
                     else if (txt.includes("papas") || txt.includes("ramitas") || txt.includes("snack")) precioEstimadoLider = "2.190";
 
-                    // Render inmediato en la UI
                     document.getElementById('view-name').innerText = nombreCompleto;
                     document.getElementById('view-cat').innerText = categoria;
                     document.getElementById('view-size').innerText = medida || "Ver Envase";
                     document.getElementById('view-price').innerText = `$ ${precioEstimadoLider}`;
                     document.getElementById('view-color').innerText = upc.startsWith("780") ? "CHILE (CL)" : "IMPORTADO";
                     
-                    // Precarga el formulario inferior
                     document.getElementById('form-name').value = nombreCompleto;
                     document.getElementById('form-price').value = precioEstimadoLider;
                 } else {
