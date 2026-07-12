@@ -45,8 +45,8 @@
                 Inventory Management <span class="text-[#ffc220] font-medium text-sm px-1.5 py-0.5 bg-white/10 rounded">PekaOS</span>
             </h1>
         </div>
-        <button id="btn-sync" onclick="sincronizarConWorker()" class="bg-[#ffc220] hover:bg-[#e0aa1c] text-gray-900 text-xs font-black px-3 py-1.5 rounded shadow-sm transition-all active:scale-95 uppercase">
-            Sincronizar Cloud
+        <button id="btn-sync" onclick="descargarDesdeWorker()" class="bg-[#ffc220] hover:bg-[#e0aa1c] text-gray-900 text-xs font-black px-3 py-1.5 rounded shadow-sm transition-all active:scale-95 uppercase">
+            Recargar Cloud
         </button>
     </header>
 
@@ -257,6 +257,9 @@
         let upcActivo = null;
         let html5QrcodeScanner = null;
         let origenNavegacion = 'home';
+
+        // URL BASE DE TU WORKER CLOUDFLARE
+        const WORKER_URL = 'https://tu-worker.cloudflare.workers.dev';
 
         // Estructuras de almacenamiento de instancias de gráficos independientes
         const itemCharts = { semana: null, mes: null, ano: null };
@@ -475,10 +478,12 @@
             renderTodosLosGraficosItem();
         }
 
-        function registrarProducto(e) {
+        // GUARDADO AUTOMÁTICO DIRECTO EN EL WORKER CLOUD
+        async function registrarProducto(e) {
             e.preventDefault();
             if(!upcActivo) return;
-            baseDeDatos[upcActivo] = {
+
+            const nuevoProducto = {
                 upc: upcActivo,
                 name: document.getElementById('form-name').value.toUpperCase(),
                 bin: document.getElementById('form-bin').value,
@@ -488,27 +493,73 @@
                 color: document.getElementById('view-color').innerText,
                 cat: document.getElementById('view-cat').innerText
             };
-            localStorage.setItem('wm_ims_database', JSON.stringify(baseDeDatos));
-            renderProducto(upcActivo);
-            alert("Producto guardado correctamente en almacenamiento local.");
+
+            const copiaDB = { ...baseDeDatos, [upcActivo]: nuevoProducto };
+
+            try {
+                const res = await fetch(`${WORKER_URL}/api/database`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(copiaDB)
+                });
+
+                if(res.ok) {
+                    baseDeDatos = copiaDB;
+                    renderProducto(upcActivo);
+                    alert("Producto guardado directamente en Cloud con éxito.");
+                } else {
+                    alert("Error: El servidor Cloud rechazó el registro.");
+                }
+            } catch(err) {
+                console.error(err);
+                alert("Error de red: No se pudo conectar con el Cloud Worker.");
+            }
         }
 
-        function modificarCantidad(cambio) {
+        // AUDITORÍA Y AJUSTE DE STOCK AUTOMÁTICO EN EL WORKER CLOUD
+        async function modificarCantidad(cambio) {
             if(!upcActivo || !baseDeDatos[upcActivo]) {
-                alert("Primero debes Guardar el producto antes de registrar stock.");
+                alert("Primero debes registrar/guardar el producto para asignarle stock.");
                 return;
             }
-            baseDeDatos[upcActivo].qty = Math.max(0, baseDeDatos[upcActivo].qty + cambio);
+
+            const nuevaQty = Math.max(0, baseDeDatos[upcActivo].qty + cambio);
             
-            historialUso.push({
+            const copiaDB = JSON.parse(JSON.stringify(baseDeDatos));
+            copiaDB[upcActivo].qty = nuevaQty;
+
+            const nuevoMovimiento = {
                 upc: upcActivo,
                 fecha: new Date().toISOString(),
                 cantidad: Math.abs(cambio)
-            });
-            
-            localStorage.setItem('wm_ims_database', JSON.stringify(baseDeDatos));
-            localStorage.setItem('wm_ims_history', JSON.stringify(historialUso));
-            renderProducto(upcActivo);
+            };
+
+            const copiaHistorial = [...historialUso, nuevoMovimiento];
+
+            try {
+                const resDB = await fetch(`${WORKER_URL}/api/database`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(copiaDB)
+                });
+
+                const resHistorial = await fetch(`${WORKER_URL}/api/history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(copiaHistorial)
+                });
+
+                if (resDB.ok && resHistorial.ok) {
+                    baseDeDatos = copiaDB;
+                    historialUso = copiaHistorial;
+                    renderProducto(upcActivo);
+                } else {
+                    alert("Error: El servidor Cloud no pudo actualizar los inventarios.");
+                }
+            } catch(err) {
+                console.error(err);
+                alert("Error de red: Cambios cancelados por falta de conexión al Cloud.");
+            }
         }
 
         // ==========================================
@@ -590,7 +641,7 @@
                     else if (filtro === 'mes' && d.getMonth() === hoy.getMonth() && d.getFullYear() === hoy.getFullYear()) valido = true;
                     else if (filtro === 'ano' && d.getFullYear() === hoy.getFullYear()) valido = true;
 
-                    if (valide = valido) {
+                    if (valido) {
                         conteoProductos[h.upc] = (conteoProductos[h.upc] || 0) + h.cantidad;
                     }
                 });
@@ -639,42 +690,38 @@
             });
         }
 
-        // ==========================================
-        // SINCRONIZACIÓN CON CLOUDFLARE WORKER
-        // ==========================================
-        async function sincronizarConWorker() {
+        // DESCARGAR/SINCRO DE DATOS INICIAL DESDE LA NUBE AL ABRIR LA APP
+        async function descargarDesdeWorker() {
             const btnSincro = document.getElementById('btn-sync');
             if (btnSincro) {
                 btnSincro.disabled = true;
-                btnSincro.innerText = "SINCRO...";
+                btnSincro.innerText = "CONECTANDO...";
             }
 
             try {
-                // Reemplaza con la URL correspondiente de tu Worker
-                const resDB = await fetch('https://tu-worker.cloudflare.workers.dev/api/database', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(baseDeDatos)
-                });
-                
-                const resHistorial = await fetch('https://tu-worker.cloudflare.workers.dev/api/history', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(historialUso)
-                });
+                // Hacemos peticiones GET para traer la información actualizada
+                const resDB = await fetch(`${WORKER_URL}/api/database`);
+                const resHistorial = await fetch(`${WORKER_URL}/api/history`);
 
                 if (resDB.ok && resHistorial.ok) {
-                    alert("Sincronización en la nube procesada de forma exitosa.");
+                    baseDeDatos = await resDB.json();
+                    historialUso = await resHistorial.json();
+                    
+                    renderBinsExistentes();
+                    renderTodosLosGraficosGlobales();
+                    if(upcActivo && baseDeDatos[upcActivo]) renderProducto(upcActivo);
+                    
+                    alert("Datos sincronizados desde el Servidor Cloud.");
                 } else {
-                    alert("El servidor del Worker retornó un estado erróneo.");
+                    alert("El Cloud Worker no devolvió registros iniciales.");
                 }
             } catch (error) {
-                console.error("Error de red:", error);
-                alert("Cambios respaldados de forma local. No se pudo conectar al Worker.");
+                console.error("Error al conectar:", error);
+                alert("Advertencia: No se pudo conectar a la nube. Mostrando espacio local vacío.");
             } finally {
                 if (btnSincro) {
                     btnSincro.disabled = false;
-                    btnSincro.innerText = "SINCRONIZAR CLOUD";
+                    btnSincro.innerText = "RECARGAR CLOUD";
                 }
             }
         }
@@ -683,19 +730,16 @@
         // INICIALIZACIÓN GENERAL DEL DOM
         // ==========================================
         window.addEventListener('DOMContentLoaded', () => {
-            baseDeDatos = JSON.parse(localStorage.getItem('wm_ims_database')) || {};
-            historialUso = JSON.parse(localStorage.getItem('wm_ims_history')) || [];
-            
             inicializarSelectBins();
-            renderBinsExistentes();
-            renderTodosLosGraficosGlobales();
+            navegarA('home');
+            
+            // Descarga inicial desde la infraestructura cloud en tiempo real
+            descargarDesdeWorker();
 
             const formRegistro = document.getElementById('product-form');
             if (formRegistro) {
                 formRegistro.addEventListener('submit', registrarProducto);
             }
-            
-            navegarA('home');
         });
     </script>
 </body>
