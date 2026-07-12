@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Inventory Managementy</title>
+    <title>Inventory Management</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- Chart.js -->
@@ -121,7 +121,7 @@
         <!-- VISTA: DETALLE DE PRODUCTO -->
         <!-- ========================================== -->
         <section id="view-detail" class="hidden p-4 space-y-4">
-            <!-- Tarjeta de Producto (Diseño TC51 / TC21) -->
+            <!-- Tarjeta de Producto -->
             <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-4 shadow-xl border border-slate-700 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-2xl pointer-events-none"></div>
                 
@@ -191,7 +191,7 @@
                 </form>
             </div>
 
-            <!-- Ajuste Rápido de Inventario (Auditoría de Cantidades) -->
+            <!-- Ajuste Rápido de Inventario -->
             <div class="bg-gray-50 border border-gray-200 p-4 rounded-xl shadow-sm space-y-3">
                 <h3 class="text-xs font-black text-gray-500 uppercase tracking-wider pb-1 border-b border-gray-200">Ajuste de Cantidades Físicas</h3>
                 <div class="grid grid-cols-4 gap-2">
@@ -231,7 +231,7 @@
 
     </main>
 
-    <!-- BARRA DE NAVEGACIÓN INFERIOR (Estilo Aplicación Corporativa Movil) -->
+    <!-- BARRA DE NAVEGACIÓN INFERIOR -->
     <nav class="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 shadow-2xl flex max-w-md mx-auto z-40">
         <button onclick="navegarA('home')" id="nav-home" class="flex-1 flex flex-col items-center justify-center text-blue-600 transition-colors">
             <span class="text-xl">🏠</span>
@@ -247,7 +247,7 @@
         </button>
     </nav>
 
-    <!-- LÓGICA DE JAVASCRIPT COMPLETAMENTE UNIFICADA -->
+    <!-- LÓGICA DE JAVASCRIPT COMPLETAMENTE CORREGIDA -->
     <script>
         // ==========================================
         // ESTRUCTURAS DE DATOS E INICIALIZACIÓN
@@ -259,19 +259,19 @@
         let origenNavegacion = 'home';
 
         // URL BASE DE TU WORKER CLOUDFLARE
-        const WORKER_URL = 'https://tu-worker.cloudflare.workers.dev';
+        const WORKER_URL = 'https://tu-worker.cloudflareworkers.dev';
 
-        // Estructuras de almacenamiento de instancias de gráficos independientes
+        // Instancias de gráficos independientes
         const itemCharts = { semana: null, mes: null, ano: null };
         const globalCharts = { semana: null, mes: null, ano: null };
 
-        // Definición de pasillos predeterminados (Walmart Bins)
+        // Ubicaciones por defecto (Walmart Bins)
         const binsPorDefecto = [
             "UBICACIÓN A-1", "UBICACIÓN A-2", "UBICACIÓN B-1", "UBICACIÓN B-2",
             "UBICACIÓN C-1", "UBICACIÓN C-2", "ZONA CONGELADOS", "ZONA REFRIGERADOS"
         ];
 
-        // Diccionario local estricto para Línea de Limpieza de Hogar
+        // Diccionario estricto para Línea de Limpieza de Hogar
         const diccionarioLimpiezaHogar = [
             { clave: "7806100", nombre: "CLOROX CLORO GEL ORIGINAL 1KG", cat: "LIMPIEZA / CLOROS", precio: "1.890", formato: "1 KG" },
             { clave: "7804920", nombre: "POETT LIMPIADOR LIQUIDO PRIMAVERA 900ML", cat: "LIMPIEZA / PISOS", precio: "1.450", formato: "900 ML" },
@@ -314,7 +314,6 @@
                 navActivo.classList.add('text-blue-600');
             }
 
-            // Ejecuciones colaterales de actualización visual al navegar
             if (vistaId === 'shelf') {
                 renderBinsExistentes();
             } else if (vistaId === 'home') {
@@ -478,7 +477,7 @@
             renderTodosLosGraficosItem();
         }
 
-        // GUARDADO AUTOMÁTICO DIRECTO EN EL WORKER CLOUD
+        // GUARDADO AUTOMÁTICO CLOUD
         async function registrarProducto(e) {
             e.preventDefault();
             if(!upcActivo) return;
@@ -516,7 +515,7 @@
             }
         }
 
-        // AUDITORÍA Y AJUSTE DE STOCK AUTOMÁTICO EN EL WORKER CLOUD
+        // AUDITORÍA Y AJUSTE DE STOCK AUTOMÁTICO CLOUD (ERROR CORREGIDO AQUÍ)
         async function modificarCantidad(cambio) {
             if(!upcActivo || !baseDeDatos[upcActivo]) {
                 alert("Primero debes registrar/guardar el producto para asignarle stock.");
@@ -543,7 +542,7 @@
                     body: JSON.stringify(copiaDB)
                 });
 
-                const resHistorial = await fetch(`${WORKER_URL}/api/history', {
+                const resHistorial = await fetch(`${WORKER_URL}/api/history`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(copiaHistorial)
@@ -675,7 +674,6 @@
             });
         }
 
-        // Helper genérico para gráficos de barras
         function crearBarChart(canvasId, labels, data, color) {
             const el = document.getElementById(canvasId);
             if (!el) return null;
@@ -690,7 +688,7 @@
             });
         }
 
-        // DESCARGAR/SINCRO DE DATOS INICIAL DESDE LA NUBE AL ABRIR LA APP
+        // SINCRO INICIAL DESDE LA NUBE
         async function descargarDesdeWorker() {
             const btnSincro = document.getElementById('btn-sync');
             if (btnSincro) {
@@ -699,7 +697,6 @@
             }
 
             try {
-                // Hacemos peticiones GET para traer la información actualizada
                 const resDB = await fetch(`${WORKER_URL}/api/database`);
                 const resHistorial = await fetch(`${WORKER_URL}/api/history`);
 
@@ -726,14 +723,11 @@
             }
         }
 
-        // ==========================================
         // INICIALIZACIÓN GENERAL DEL DOM
-        // ==========================================
         window.addEventListener('DOMContentLoaded', () => {
             inicializarSelectBins();
             navegarA('home');
             
-            // Descarga inicial desde la infraestructura cloud en tiempo real
             descargarDesdeWorker();
 
             const formRegistro = document.getElementById('product-form');
