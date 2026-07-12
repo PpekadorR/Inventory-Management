@@ -1,314 +1,331 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Sales Floor Tool</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Walmart IMS - Lider Chile</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Chart.js para métricas -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- HTML5 QR Code Scanner para cámara real -->
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- Html5Qrcode Scanner -->
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         body {
+            -webkit-tap-highlight-color: transparent;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #ededed;
-            -webkit-user-select: none;
-            user-select: none;
         }
-        .wm-navbar { background-color: #3276cd; }
-        .wm-text-blue { color: #3276cd; }
-        .wm-circle-gold { border-color: #f2b735; }
-        .wm-btn-scan { background-color: #f2b735; }
-        .status-bar { background-color: #2761ad; }
-        
-        .page {
+        .hide-scrollbar::-webkit-scrollbar {
             display: none;
-            transition: opacity 0.2s ease-in-out;
         }
-        .page.active {
-            display: flex;
-            flex-direction: column;
-        }
-        #reader {
-            width: 100% !important;
-            border: none !important;
-        }
-        #reader video {
-            object-fit: cover !important;
-            border-radius: 8px;
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen select-none">
 
-    <!-- BARRA DE ESTADO SIMULADA -->
-    <div class="status-bar text-white text-[11px] px-4 py-1 flex justify-between items-center font-medium z-50">
-        <span id="live-clock">00:00</span>
-        <div class="flex items-center space-x-1.5">
-            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
-            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M17 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/></svg>
+    <!-- CAMARA / SCANNER FULLSCREEN CONTAINER -->
+    <div id="scanner-container" class="fixed inset-0 bg-black z-50 hidden flex flex-col justify-between">
+        <div class="p-4 flex justify-between items-center bg-zinc-900/80 backdrop-blur-md text-white z-10">
+            <h2 class="font-bold tracking-wide">ESCANEANDO CÓDIGO UPC</h2>
+            <button onclick="detenerCamara()" class="px-4 py-2 bg-red-600 active:bg-red-700 rounded-lg text-xs font-bold uppercase tracking-wider">Cerrar</button>
+        </div>
+        <div class="relative flex-1 flex items-center justify-center">
+            <div id="reader" class="w-full h-full max-w-md mx-auto"></div>
         </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- VISTA 1: HOME (SALES FLOOR TOOL)           -->
-    <!-- ========================================== -->
-    <div id="page-home" class="page active min-h-[calc(100vh-20px)]">
-        <header class="wm-navbar text-white px-3 py-3.5 shadow-sm flex items-center justify-between sticky top-0 z-50">
-            <div class="flex items-center space-x-5">
-                <button class="active:opacity-60">
-                    <svg class="w-6 h-6 stroke-current stroke-2" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                </button>
-                <h1 class="text-xl font-medium tracking-wide">Sales Floor Tool</h1>
-            </div>
-        </header>
-
-        <div class="bg-white p-2 shadow-xs border-b border-gray-200 flex gap-2 max-w-md mx-auto w-full">
-            <input type="text" id="search-input-home" placeholder="Escribir UPC / Barra..." class="w-full bg-gray-100 px-3 py-2 rounded text-sm font-mono focus:outline-none border border-gray-300">
-            <button onclick="procesarBusqueda('home')" class="wm-navbar text-white px-4 py-2 rounded text-xs font-bold uppercase tracking-wider">OK</button>
+    <!-- HEADER PRINCIPAL -->
+    <header class="bg-[#0071dc] text-white px-4 py-3 shadow-md sticky top-0 z-40 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <div class="w-2.5 h-2.5 bg-[#ffc220] rounded-full animate-pulse"></div>
+            <h1 class="font-black text-lg tracking-tight flex items-center gap-1">
+                Walmart <span class="text-[#ffc220] font-medium text-sm px-1.5 py-0.5 bg-white/10 rounded">IMS Chile</span>
+            </h1>
         </div>
+        <button id="btn-sync" onclick="sincronizarConWorker()" class="bg-[#ffc220] hover:bg-[#e0aa1c] text-gray-900 text-xs font-black px-3 py-1.5 rounded shadow-sm transition-all active:scale-95 uppercase">
+            Sincronizar Cloud
+        </button>
+    </header>
 
-        <main class="flex-1 max-w-md mx-auto w-full bg-[#f4f5f7]">
-            <div id="scanner-container" class="hidden bg-black p-4 text-center">
-                <div class="flex justify-between items-center text-white mb-2 px-2">
-                    <span class="text-sm font-bold">Escaneando código...</span>
-                    <button onclick="detenerCamara()" class="bg-red-600 text-xs px-3 py-1 rounded font-bold uppercase">Cerrar</button>
+    <!-- CONTENIDO PRINCIPAL CON NAVEGACIÓN -->
+    <main class="flex-1 pb-24 overflow-y-auto max-w-md w-full mx-auto bg-white min-h-[calc(100vh-120px)] shadow-xl relative">
+        
+        <!-- ========================================== -->
+        <!-- VISTA: INICIO / HOME -->
+        <!-- ========================================== -->
+        <section id="view-home" class="p-4 space-y-5">
+            <!-- Buscador Manual y Acceso a Escáner -->
+            <div class="bg-gray-100 p-4 rounded-xl shadow-inner border border-gray-200">
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Búsqueda / Captura de Inventario</label>
+                <div class="flex gap-2">
+                    <input type="text" id="search-input-home" placeholder="Ingrese código UPC manualmente..." class="flex-1 bg-white px-3 py-2.5 rounded-lg text-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono">
+                    <button onclick="procesarBusqueda('home')" class="bg-blue-600 text-white px-4 rounded-lg font-bold active:bg-blue-700 text-sm">Buscar</button>
                 </div>
-                <div id="reader" class="bg-gray-900 rounded-lg overflow-hidden"></div>
-            </div>
-
-            <div id="area-scan-central" class="bg-white py-10 text-center flex flex-col items-center justify-center border-b border-gray-200">
-                <p class="text-gray-900 text-lg font-medium mb-5 tracking-tight">Scan Item for Item Information</p>
-                <div onclick="iniciarCamara()" class="border-4 border-gray-500 p-4 rounded-xs active:bg-gray-100 cursor-pointer transition-colors">
-                    <svg class="w-24 h-16 text-gray-600" viewBox="0 0 24 16" fill="currentColor">
-                        <rect x="1" width="2" height="16"/><rect x="4" width="1" height="16"/><rect x="6" width="3" height="16"/><rect x="10" width="1" height="16"/><rect x="12" width="2" height="16"/><rect x="15" width="1" height="16"/><rect x="17" width="3" height="16"/><rect x="21" width="2" height="16"/>
-                    </svg>
-                </div>
-            </div>
-
-            <div class="bg-[#ededed] px-4 py-2.5 text-sm text-gray-500 font-bold tracking-wide border-b border-gray-200">Or Select a Task</div>
-            <div class="bg-white divide-y divide-gray-200 text-base font-normal text-gray-800">
-                <div class="px-4 py-4 flex justify-between items-center active:bg-gray-50 cursor-pointer">
-                    <span>Section Work</span>
-                    <span class="text-gray-400 font-bold">&#10095;</span>
-                </div>
-                <!-- CAMBIO DE NOMBRE A GRÁFICOS INFORMATIVOS -->
-                <div onclick="abrirMetricasGlobales()" class="px-4 py-4 flex justify-between items-center active:bg-gray-50 cursor-pointer wm-text-blue font-bold">
-                    <span>Gráficos informativos</span>
-                    <span class="text-gray-400 font-bold">&#10095;</span>
-                </div>
-                <!-- CAMBIO DE NOMBRE A UBICACIONES Y ESTANTERÍAS -->
-                <div onclick="abrirShelfAvailability()" class="px-4 py-4 flex justify-between items-center active:bg-gray-50 cursor-pointer text-emerald-600 font-bold">
-                    <span>Ubicaciones y estanterías</span>
-                    <span class="text-gray-400 font-bold">&#10095;</span>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- VISTA 2: DETALLE (ITEM INFO)               -->
-    <!-- ========================================== -->
-    <div id="page-detail" class="page min-h-[calc(100vh-20px)]">
-        <header class="wm-navbar text-white px-3 py-3.5 shadow-sm flex items-center justify-between sticky top-0 z-50">
-            <div class="flex items-center space-x-5">
-                <button onclick="volverDesdeDetalle()" class="active:opacity-60"><svg class="w-6 h-6 stroke-current stroke-2" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></button>
-                <h1 class="text-xl font-medium tracking-wide">Item Info</h1>
-            </div>
-        </header>
-
-        <main class="flex-1 p-3 space-y-3 overflow-y-auto max-w-md mx-auto w-full">
-            <div class="bg-white rounded-xs shadow-xs border border-gray-200 p-4">
-                <div class="flex justify-between items-start mb-2">
-                    <div class="w-[70%]">
-                        <h2 id="view-name" class="text-base font-black tracking-tight text-gray-900 uppercase leading-snug">CARGANDO...</h2>
-                        <p id="view-cat" class="text-[11px] text-gray-400 font-bold uppercase mt-1">Categoría</p>
-                    </div>
-                    <div class="flex items-center text-base font-black text-blue-700 bg-blue-50 px-2 py-1 rounded">
-                        <span id="view-price">$ 0</span>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-y-1.5 gap-x-4 text-xs font-medium text-gray-500 mt-4 pt-3 border-t border-gray-100">
-                    <div class="flex justify-between"><span>UPC</span><span id="view-upc" class="font-mono text-gray-900">--</span></div>
-                    <div class="flex justify-between"><span>Ubicación</span><span id="view-bin" class="text-gray-900 font-bold">--</span></div>
-                    <div class="flex justify-between"><span>Formato</span><span id="view-size" class="text-gray-900 font-bold">--</span></div>
-                    <div class="flex justify-between"><span>Origen</span><span id="view-color" class="text-gray-900">--</span></div>
-                </div>
-            </div>
-
-            <!-- Inventario Limpio -->
-            <div class="bg-white rounded-xs shadow-xs border border-gray-200 flex flex-col">
-                <div class="p-3 text-xs font-bold uppercase text-gray-400 tracking-wider">Inventory</div>
-                <div class="grid grid-cols-3 items-center justify-center px-4 py-4 text-center">
-                    <div>
-                        <span id="stock-bin" class="text-3xl font-light text-gray-800 block">0</span>
-                        <span class="text-xs text-gray-400 font-medium">En Bin</span>
-                    </div>
-                    <div class="flex flex-col items-center justify-center">
-                        <div class="w-20 h-20 rounded-full border-4 wm-circle-gold flex flex-col items-center justify-center bg-white shadow-xs">
-                            <span id="stock-onhand" class="text-3xl font-medium text-gray-900 leading-none">0</span>
-                            <span class="text-[10px] text-gray-500 font-medium mt-0.5">Total</span>
-                        </div>
-                    </div>
-                    <div>
-                        <span id="stock-floor" class="text-3xl font-light text-gray-800 block">0</span>
-                        <span class="text-xs text-gray-400 font-medium">Sales Floor</span>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 text-center border-t border-gray-100 text-xs font-bold wm-text-blue">
-                    <button onclick="modificarCantidad(-1)" class="py-3 border-r border-gray-100 active:bg-gray-50 flex items-center justify-center space-x-1 uppercase font-black text-red-600">
-                        <span>➖ Descontar 1</span>
-                    </button>
-                    <button onclick="modificarCantidad(1)" class="py-3 active:bg-gray-50 flex items-center justify-center space-x-1 uppercase font-black text-emerald-600">
-                        <span>➕ Agregar 1</span>
+                
+                <div id="area-scan-central" class="mt-4">
+                    <button onclick="iniciarCamara()" class="w-full bg-[#ffc220] text-gray-900 py-3.5 rounded-xl font-black text-sm shadow-md flex items-center justify-center gap-2 active:bg-[#e5ae1a] border border-[#ffc220] transition-transform active:scale-[0.99]">
+                        📷 INICIAR ESCÁNER DE CÁMARA
                     </button>
                 </div>
             </div>
 
-            <!-- Formulario Registro -->
-            <div class="bg-white rounded-xs shadow-xs border border-gray-200 p-4">
-                <form id="save-form" onsubmit="registrarProducto(event)" class="space-y-2.5 text-xs">
+            <!-- Resumen de Métricas Globales del Local -->
+            <div class="space-y-4">
+                <h3 class="font-black text-sm text-gray-400 tracking-wider uppercase border-b border-gray-100 pb-1">Métricas de Movimiento General</h3>
+                
+                <!-- Gráfico Global: Semana -->
+                <div class="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+                    <h4 class="text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Top 5 Más Movidos - Últimos 7 Días</h4>
+                    <div class="h-44">
+                        <canvas id="globalChartSemana"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráfico Global: Mes -->
+                <div class="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+                    <h4 class="text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Top 5 Más Movidos - Mes Actual</h4>
+                    <div class="h-44">
+                        <canvas id="globalChartMes"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráfico Global: Año -->
+                <div class="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+                    <h4 class="text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Top 5 Más Movidos - Año en Curso</h4>
+                    <div class="h-44">
+                        <canvas id="globalChartAno"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VISTA: CONTROL DE ESTANTERÍAS / BINS -->
+        <!-- ========================================== -->
+        <section id="view-shelf" class="hidden">
+            <div class="p-4 bg-gray-100 border-b border-gray-200 flex justify-between items-center sticky top-0 z-10">
+                <div class="flex items-center gap-2">
+                    <button id="btn-back-to-bins" onclick="renderBinsExistentes()" class="hidden text-blue-600 font-bold text-sm bg-white border border-gray-300 px-3 py-1 rounded-lg active:bg-gray-100">&larr; Volver</button>
+                    <h2 id="shelf-title" class="font-black text-gray-800 uppercase tracking-tight text-sm">Ubicaciones de Inventario (Bins)</h2>
+                </div>
+            </div>
+            <div id="shelf-content-list" class="divide-y divide-gray-200 bg-white">
+                <!-- Se inyecta dinámicamente -->
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VISTA: DETALLE DE PRODUCTO -->
+        <!-- ========================================== -->
+        <section id="view-detail" class="hidden p-4 space-y-4">
+            <!-- Tarjeta de Producto (Diseño TC51 / TC21) -->
+            <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-4 shadow-xl border border-slate-700 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-2xl pointer-events-none"></div>
+                
+                <div class="flex justify-between items-start gap-2 mb-1">
+                    <span id="view-cat" class="text-[10px] bg-blue-600 text-white font-extrabold px-2 py-0.5 rounded tracking-wider uppercase">SALA / TIENDA</span>
+                    <span class="text-[10px] bg-slate-700 text-slate-300 font-mono px-2 py-0.5 rounded" id="view-upc">0000000000000</span>
+                </div>
+                
+                <h2 id="view-name" class="font-black text-base tracking-tight leading-snug uppercase break-words mb-3">PRODUCTO NUEVO O NO REGISTRADO</h2>
+                
+                <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-700/60 text-center">
                     <div>
-                        <label class="block font-bold text-gray-500 mb-1">Nombre Comercial Confirmado</label>
-                        <input type="text" id="form-name" required class="w-full border border-gray-300 p-2 rounded bg-gray-50 text-gray-900 font-bold focus:outline-none">
+                        <span class="block text-[9px] text-slate-400 uppercase font-bold tracking-wider">Precio Lider</span>
+                        <span id="view-price" class="text-sm font-black text-[#ffc220]">$ 0</span>
+                    </div>
+                    <div>
+                        <span class="block text-[9px] text-slate-400 uppercase font-bold tracking-wider">Formato</span>
+                        <span id="view-size" class="text-xs font-bold text-slate-200 truncate block">--</span>
+                    </div>
+                    <div>
+                        <span class="block text-[9px] text-slate-400 uppercase font-bold tracking-wider">Color/Modo</span>
+                        <span id="view-color" class="text-xs font-bold text-slate-200 block">CL</span>
+                    </div>
+                </div>
+
+                <div class="mt-4 grid grid-cols-2 gap-2 bg-slate-950/40 p-2.5 rounded-xl border border-slate-700/40 text-center">
+                    <div>
+                        <span class="block text-[9px] text-slate-400 uppercase font-bold">Stock Bin</span>
+                        <span id="stock-bin" class="text-base font-black text-white">0</span>
+                    </div>
+                    <div>
+                        <span class="block text-[9px] text-slate-400 uppercase font-bold">Stock On Hand</span>
+                        <span id="stock-onhand" class="text-base font-black text-blue-400">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buscador secundario rápido -->
+            <div class="flex gap-2 bg-gray-100 p-2 rounded-xl border border-gray-200">
+                <input type="text" id="search-input-detail" placeholder="Escanear o ingresar otro UPC..." class="flex-1 bg-white px-3 py-1.5 rounded-lg text-xs border border-gray-300 font-mono">
+                <button onclick="procesarBusqueda('detail')" class="bg-slate-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs active:bg-slate-800">Buscar</button>
+            </div>
+
+            <!-- Formulario de Configuración de Ubicación y Registro -->
+            <div class="bg-gray-50 border border-gray-200 p-4 rounded-xl shadow-sm">
+                <h3 class="text-xs font-black text-gray-500 uppercase tracking-wider mb-3 pb-1 border-b border-gray-200">Ubicación y Registro en Sistema</h3>
+                <form id="product-form" class="space-y-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Nombre Comercial Ajustado</label>
+                        <input type="text" id="form-name" required class="w-full bg-white border border-gray-300 px-3 py-2 rounded-lg text-xs font-bold uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block font-bold text-gray-500 mb-1">Ubicación Física</label>
-                            <select id="form-bin" class="w-full border border-gray-300 p-2 rounded bg-white text-gray-900 focus:outline-none">
-                                <option value="ESTANTE A-1">Estante A-1</option>
-                                <option value="ESTANTE B-3">Estante B-3</option>
-                                <option value="DESPENSA ALTA">Despensa Alta</option>
-                                <option value="REFRIGERADOR">Refrigerador</option>
-                                <option value="PASILLO LIMPIEZA">Pasillo Limpieza</option>
-                                <option value="SECTOR ASEO HOGAR">Sector Aseo Hogar</option>
+                            <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Ubicación (Bin)</label>
+                            <select id="form-bin" class="w-full bg-white border border-gray-300 px-3 py-2 rounded-lg text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <!-- Se llena dinámicamente mediante JS -->
                             </select>
                         </div>
                         <div>
-                            <label class="block font-bold text-gray-500 mb-1">Precio Líder (CLP)</label>
-                            <input type="text" id="form-price" class="w-full border border-gray-300 p-2 rounded bg-gray-50 text-gray-900 font-bold focus:outline-none">
+                            <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Precio ($)</label>
+                            <input type="text" id="form-price" required class="w-full bg-white border border-gray-300 px-3 py-2 rounded-lg text-xs font-mono text-right focus:ring-2 focus:ring-blue-500 focus:outline-none">
                         </div>
                     </div>
-                    <button type="submit" class="w-full wm-navbar text-white font-bold py-2.5 rounded uppercase tracking-wider text-center active:opacity-90">Confirmar y Almacenar</button>
+                    <button type="submit" class="w-full bg-blue-600 text-white font-black text-xs py-2.5 rounded-lg shadow uppercase tracking-wider active:bg-blue-700 transition-transform active:scale-[0.99]">
+                        Guardar / Actualizar Ficha
+                    </button>
                 </form>
             </div>
 
-            <!-- TRES GRÁFICOS SEPARADOS PARA EL ITEM (UNO BAJO EL OTRO) -->
-            <div class="bg-white rounded-xs shadow-xs border border-gray-200 p-4 space-y-6 mb-16">
-                <div>
-                    <div class="text-xs font-bold uppercase text-gray-400 tracking-wider mb-2">Uso en la Semana</div>
-                    <div class="h-40 w-full"><canvas id="itemChartSemana"></canvas></div>
-                </div>
-                <hr class="border-gray-100">
-                <div>
-                    <div class="text-xs font-bold uppercase text-gray-400 tracking-wider mb-2">Uso en el Mes</div>
-                    <div class="h-40 w-full"><canvas id="itemChartMes"></canvas></div>
-                </div>
-                <hr class="border-gray-100">
-                <div>
-                    <div class="text-xs font-bold uppercase text-gray-400 tracking-wider mb-2">Uso en el Año</div>
-                    <div class="h-40 w-full"><canvas id="itemChartAno"></canvas></div>
+            <!-- Ajuste Rápido de Inventario (Auditoría de Cantidades) -->
+            <div class="bg-gray-50 border border-gray-200 p-4 rounded-xl shadow-sm space-y-3">
+                <h3 class="text-xs font-black text-gray-500 uppercase tracking-wider pb-1 border-b border-gray-200">Ajuste de Cantidades Físicas</h3>
+                <div class="grid grid-cols-4 gap-2">
+                    <button onclick="modificarCantidad(-10)" class="bg-red-100 text-red-700 font-extrabold py-2 rounded-lg text-xs border border-red-200 active:bg-red-200">-10</button>
+                    <button onclick="modificarCantidad(-1)" class="bg-red-50 text-red-600 font-extrabold py-2 rounded-lg text-xs border border-red-100 active:bg-red-100">-1</button>
+                    <button onclick="modificarCantidad(1)" class="bg-green-50 text-green-600 font-extrabold py-2 rounded-lg text-xs border border-green-100 active:bg-green-100">+1</button>
+                    <button onclick="modificarCantidad(10)" class="bg-green-100 text-green-700 font-extrabold py-2 rounded-lg text-xs border border-green-200 active:bg-green-200">+10</button>
                 </div>
             </div>
-        </main>
-    </div>
 
-    <!-- ========================================== -->
-    <!-- VISTA 3: UBICACIONES Y ESTANTERÍAS         -->
-    <!-- ========================================== -->
-    <div id="page-shelf" class="page min-h-[calc(100vh-20px)]">
-        <header class="wm-navbar text-white px-3 py-3.5 shadow-sm flex items-center sticky top-0 z-50">
-            <button onclick="navegarA('home')" class="active:opacity-60 mr-5"><svg class="w-6 h-6 stroke-current stroke-2" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></button>
-            <h1 id="shelf-title" class="text-xl font-medium tracking-wide">Ubicaciones (Bins)</h1>
-        </header>
-        <main class="flex-1 max-w-md mx-auto w-full bg-[#f4f5f7] p-3">
-            <button id="btn-back-to-bins" onclick="renderListaUbicaciones()" class="hidden mb-3 w-full bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded text-xs uppercase tracking-wider text-center active:bg-gray-300">⬅️ Volver a todas las Ubicaciones</button>
-            <div id="shelf-content-list" class="bg-white rounded border border-gray-200 divide-y divide-gray-200 text-sm font-medium text-gray-800 shadow-sm"></div>
-        </main>
-    </div>
+            <!-- Gráficos del Item Individual -->
+            <div class="space-y-3">
+                <h3 class="text-xs font-black text-gray-400 uppercase tracking-wider pb-1 border-b border-gray-100">Historial y Tendencia del Artículo</h3>
+                
+                <div class="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+                    <h4 class="text-[11px] font-bold text-gray-500 mb-2 uppercase">Movimientos de la Semana</h4>
+                    <div class="h-36">
+                        <canvas id="itemChartSemana"></canvas>
+                    </div>
+                </div>
 
-    <!-- ========================================== -->
-    <!-- VISTA 4: GRÁFICOS INFORMATIVOS (MÉTRICAS)  -->
-    <!-- ========================================== -->
-    <div id="page-maintenance" class="page min-h-[calc(100vh-20px)]">
-        <header class="wm-navbar text-white px-3 py-3.5 shadow-sm flex items-center sticky top-0 z-50">
-            <button onclick="navegarA('home')" class="active:opacity-60 mr-5"><svg class="w-6 h-6 stroke-current stroke-2" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></button>
-            <h1 class="text-xl font-medium tracking-wide">Gráficos informativos</h1>
-        </header>
-        <main class="flex-1 max-w-md mx-auto w-full bg-[#f4f5f7] p-3 space-y-4 pb-16">
-            <!-- TRES GRÁFICOS GLOBALES SEPARADOS (UNO BAJO EL OTRO) -->
-            <div class="bg-white rounded border border-gray-200 p-4 shadow-sm">
-                <div class="text-xs font-bold uppercase text-gray-500 tracking-wider mb-2">Más utilizados: Esta Semana</div>
-                <div class="h-48 w-full"><canvas id="globalChartSemana"></canvas></div>
-            </div>
-            <div class="bg-white rounded border border-gray-200 p-4 shadow-sm">
-                <div class="text-xs font-bold uppercase text-gray-500 tracking-wider mb-2">Más utilizados: Este Mes</div>
-                <div class="h-48 w-full"><canvas id="globalChartMes"></canvas></div>
-            </div>
-            <div class="bg-white rounded border border-gray-200 p-4 shadow-sm">
-                <div class="text-xs font-bold uppercase text-gray-500 tracking-wider mb-2">Más utilizados: Este Año</div>
-                <div class="h-48 w-full"><canvas id="globalChartAno"></canvas></div>
-            </div>
-        </main>
-    </div>
+                <div class="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+                    <h4 class="text-[11px] font-bold text-gray-500 mb-2 uppercase">Movimientos Mensuales</h4>
+                    <div class="h-36">
+                        <canvas id="itemChartMes"></canvas>
+                    </div>
+                </div>
 
-    <!-- BOTÓN FLOTANTE SCAN -->
-    <div class="fixed bottom-4 right-4 z-40">
-        <button onclick="iniciarCamara()" class="wm-btn-scan text-gray-900 font-bold px-5 py-3 rounded-full shadow-lg flex items-center space-x-2 uppercase text-sm tracking-wider active:scale-95 transition-transform">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h2v2H7V7zm0 4h2v2H7v-2zm0 4h2v2H7v-2zm4-8h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2zm4-8h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"/></svg>
-            <span class="font-black">Scan</span>
+                <div class="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+                    <h4 class="text-[11px] font-bold text-gray-500 mb-2 uppercase">Historial Anualizado</h4>
+                    <div class="h-36">
+                        <canvas id="itemChartAno"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- BARRA DE NAVEGACIÓN INFERIOR (Estilo Aplicación Corporativa Movil) -->
+    <nav class="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 shadow-2xl flex max-w-md mx-auto z-40">
+        <button onclick="navegarA('home')" id="nav-home" class="flex-1 flex flex-col items-center justify-center text-blue-600 transition-colors">
+            <span class="text-xl">🏠</span>
+            <span class="text-[10px] font-bold uppercase tracking-wide mt-0.5">Inicio</span>
         </button>
-    </div>
+        <button onclick="navegarA('shelf')" id="nav-shelf" class="flex-1 flex flex-col items-center justify-center text-gray-400 transition-colors">
+            <span class="text-xl">📦</span>
+            <span class="text-[10px] font-bold uppercase tracking-wide mt-0.5">Estanterías</span>
+        </button>
+        <button onclick="navegarA('detail')" id="nav-detail" class="flex-1 flex flex-col items-center justify-center text-gray-400 transition-colors">
+            <span class="text-xl">📋</span>
+            <span class="text-[10px] font-bold uppercase tracking-wide mt-0.5">Ficha Item</span>
+        </button>
+    </nav>
 
+    <!-- LÓGICA DE JAVASCRIPT COMPLETAMENTE UNIFICADA -->
     <script>
-        let baseDeDatos = JSON.parse(localStorage.getItem('wm_ims_database')) || {};
-        let historialUso = JSON.parse(localStorage.getItem('wm_ims_history')) || [];
-
-        const diccionarioLimpiezaHogar = [
-            { clave: "clorox", nombre: "CLOROX TRADICIONAL CLORO LÍQUIDO", cat: "LIMPIEZA E HIGIENE", precio: "1.890", formato: "2 L" },
-            { clave: "omo", nombre: "OMO DETERGENTE LÍQUIDO MULTIACCIÓN", cat: "ASEO ROPA", precio: "10.490", formato: "3 L" },
-            { clave: "quix", nombre: "QUIX LAVALOZAS CONCENTRADO LIMÓN", cat: "LIMPIEZA COCINA", precio: "2.450", formato: "750 ML" },
-            { clave: "confort", nombre: "CONFORT PAPEL HIGIÉNICO DOBLE HOJA", cat: "HOGAR E HIGIENE", precio: "4.290", formato: "4 UN" }
-        ];
-
-        const binsPorDefecto = ["ESTANTE A-1", "ESTANTE B-3", "DESPENSA ALTA", "REFRIGERADOR", "PASILLO LIMPIEZA", "SECTOR ASEO HOGAR"];
+        // ==========================================
+        // ESTRUCTURAS DE DATOS E INICIALIZACIÓN
+        // ==========================================
+        let baseDeDatos = {};
+        let historialUso = [];
         let upcActivo = null;
-        
-        // Instancias de gráficos individuales e independientes
-        let itemCharts = { semana: null, mes: null, ano: null };
-        let globalCharts = { semana: null, mes: null, ano: null };
-        
         let html5QrcodeScanner = null;
         let origenNavegacion = 'home';
 
-        document.addEventListener("DOMContentLoaded", () => { initClock(); });
+        // Estructuras de almacenamiento de instancias de gráficos independientes
+        const itemCharts = { semana: null, mes: null, ano: null };
+        const globalCharts = { semana: null, mes: null, ano: null };
 
-        function initClock() {
-            const updateClock = () => {
-                const now = new Date();
-                document.getElementById('live-clock').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
-            };
-            setInterval(updateClock, 1000);
-            updateClock();
+        // Definición de pasillos predeterminados (Walmart Bins)
+        const binsPorDefecto = [
+            "PASILLO A-1", "PASILLO A-2", "PASILLO B-1", "PASILLO B-2",
+            "PASILLO C-1", "PASILLO C-2", "BODEGA CENTRAL", "ZONA REFRIGERADOS"
+        ];
+
+        // Diccionario local estricto para Línea de Limpieza de Hogar
+        const diccionarioLimpiezaHogar = [
+            { clave: "7806100", nombre: "CLOROX CLORO GEL ORIGINAL 1KG", cat: "LIMPIEZA / CLOROS", precio: "1.890", formato: "1 KG" },
+            { clave: "7804920", nombre: "POETT LIMPIADOR LIQUIDO PRIMAVERA 900ML", cat: "LIMPIEZA / PISOS", precio: "1.450", formato: "900 ML" },
+            { clave: "7501001", nombre: "ARIEL DETERGENTE LIQUIDO CONCENTRADO 1.2L", cat: "LIMPIEZA / ROPA", precio: "4.990", formato: "1.2 L" },
+            { clave: "7805000", nombre: "QUX LIMPIAVIDRIOS GATILLO 500ML", cat: "LIMPIEZA / VIDRIOS", precio: "1.290", formato: "500 ML" },
+            { clave: "3052106", nombre: "CIFO LAVALOZAS CONCENTRADO LIMON 750ML", cat: "LIMPIEZA / COCINA", precio: "2.100", formato: "750 ML" }
+        ];
+
+        // Llenar select de ubicaciones del formulario
+        function inicializarSelectBins() {
+            const select = document.getElementById('form-bin');
+            if(select) {
+                select.innerHTML = "";
+                binsPorDefecto.forEach(bin => {
+                    const opt = document.createElement('option');
+                    opt.value = bin;
+                    opt.innerText = bin;
+                    select.appendChild(opt);
+                });
+            }
         }
 
-        function navegarA(pageId) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(`page-${pageId}`).classList.add('active');
-            window.scrollTo(0, 0);
-            if (pageId === 'home') detenerCamara();
+        // ==========================================
+        // SISTEMA DE NAVEGACIÓN ENTRE VISTAS
+        // ==========================================
+        function navegarA(vistaId) {
+            ['home', 'shelf', 'detail'].forEach(v => {
+                document.getElementById(`view-${v}`).classList.add('hidden');
+                const navBtn = document.getElementById(`nav-${v}`);
+                if (navBtn) {
+                    navBtn.classList.remove('text-blue-600', 'text-gray-400');
+                    navBtn.classList.add('text-gray-400');
+                }
+            });
+
+            document.getElementById(`view-${vistaId}`).classList.remove('hidden');
+            const navActivo = document.getElementById(`nav-${vistaId}`);
+            if (navActivo) {
+                navActivo.classList.remove('text-gray-400');
+                navActivo.classList.add('text-blue-600');
+            }
+
+            // Ejecuciones colaterales de actualización visual al navegar
+            if (vistaId === 'shelf') {
+                renderBinsExistentes();
+            } else if (vistaId === 'home') {
+                renderTodosLosGraficosGlobales();
+            }
         }
 
-        function volverDesdeDetalle() { navegarA(origenNavegacion); }
-        function abrirShelfAvailability() { origenNavegacion = 'shelf'; navegarA('shelf'); renderListaUbicaciones(); }
-        function abrirMetricasGlobales() { navegarA('maintenance'); setTimeout(() => { renderTodosLosGraficosGlobales(); }, 100); }
-
-        function renderListaUbicaciones() {
-            document.getElementById('shelf-title').innerText = "Ubicaciones (Bins)";
+        // ==========================================
+        // GESTIÓN DE UBICACIONES (BINS) Y PRODUCTOS
+        // ==========================================
+        function renderBinsExistentes() {
+            document.getElementById('shelf-title').innerText = "Ubicaciones de Inventario (Bins)";
             document.getElementById('btn-back-to-bins').classList.add('hidden');
+            
             const binsExistentes = Object.values(baseDeDatos).map(item => item.bin);
             const todasLasUbicaciones = [...new Set([...binsPorDefecto, ...binsExistentes])];
             const container = document.getElementById('shelf-content-list');
@@ -317,9 +334,9 @@
             todasLasUbicaciones.forEach(bin => {
                 const cantProductos = Object.values(baseDeDatos).filter(item => item.bin === bin).length;
                 const div = document.createElement('div');
-                div.className = "px-4 py-4 flex justify-between items-center active:bg-gray-100 cursor-pointer";
+                div.className = "px-4 py-4 flex justify-between items-center active:bg-gray-100 cursor-pointer border-b border-gray-150";
                 div.onclick = () => renderProductosDeUbicacion(bin);
-                div.innerHTML = `<div class="flex flex-col"><span class="font-bold text-gray-900">${bin}</span><span class="text-xs text-gray-400">${cantProductos} registrados</span></div><span class="text-blue-600 font-bold">&#10095;</span>`;
+                div.innerHTML = `<div class="flex flex-col"><span class="font-bold text-gray-900 text-sm">${bin}</span><span class="text-xs text-gray-400">${cantProductos} registrados</span></div><span class="text-blue-600 font-bold">&#10095;</span>`;
                 container.appendChild(div);
             });
         }
@@ -332,7 +349,7 @@
 
             const productosFiltrados = Object.values(baseDeDatos).filter(item => item.bin === binNombre);
             if(productosFiltrados.length === 0) {
-                container.innerHTML = `<div class="p-6 text-center text-gray-400 italic">Sin productos.</div>`;
+                container.innerHTML = `<div class="p-6 text-center text-gray-400 italic text-xs">Sin productos vinculados a esta ubicación.</div>`;
                 return;
             }
 
@@ -345,6 +362,9 @@
             });
         }
 
+        // ==========================================
+        // ESCÁNER DE CÁMARA (HTML5-QRCODE)
+        // ==========================================
         function iniciarCamara() {
             origenNavegacion = 'home';
             navegarA('home');
@@ -352,9 +372,9 @@
             document.getElementById('area-scan-central').classList.add('hidden');
             if (!html5QrcodeScanner) html5QrcodeScanner = new Html5Qrcode("reader");
 
-            html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 25, qrbox: { width: 320, height: 160 } },
+            html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 25, qrbox: { width: 300, height: 150 } },
                 (decodedText) => { detenerCamara(); procesarBusquedaManualOEscaneo(decodedText); }, () => {}
-            ).catch(() => { alert("Permiso denegado"); detenerCamara(); });
+            ).catch(() => { alert("Permiso de cámara denegado o no disponible."); detenerCamara(); });
         }
 
         function detenerCamara() {
@@ -363,12 +383,15 @@
             if (html5QrcodeScanner && html5QrcodeScanner.isScanning) html5QrcodeScanner.stop().catch(() => {});
         }
 
+        // ==========================================
+        // PROCESAMIENTO DE BÚSQUEDAS E INTEGRACIÓN
+        // ==========================================
         function procesarBusqueda(contexto) {
             const inputId = contexto === 'home' ? 'search-input-home' : 'search-input-detail';
             const upc = document.getElementById(inputId).value.trim();
             if(!upc) return;
-            document.getElementById('search-input-home').value = "";
-            origenNavegacion = 'home';
+            document.getElementById(inputId).value = "";
+            origenNavegacion = contexto;
             procesarBusquedaManualOEscaneo(upc);
         }
 
@@ -442,7 +465,7 @@
             document.getElementById('view-cat').innerText = item.cat;
             document.getElementById('view-price').innerText = `$ ${item.price}`;
             document.getElementById('view-upc').innerText = item.upc;
-            document.getElementById('view-bin').innerText = item.bin;
+            document.getElementById('form-bin').value = item.bin;
             document.getElementById('view-size').innerText = item.size;
             document.getElementById('view-color').innerText = item.color;
             document.getElementById('stock-bin').innerText = item.qty;
@@ -467,11 +490,12 @@
             };
             localStorage.setItem('wm_ims_database', JSON.stringify(baseDeDatos));
             renderProducto(upcActivo);
+            alert("Producto guardado correctamente en almacenamiento local.");
         }
 
         function modificarCantidad(cambio) {
             if(!upcActivo || !baseDeDatos[upcActivo]) {
-                alert("Primero debes Guardar el producto.");
+                alert("Primero debes Guardar el producto antes de registrar stock.");
                 return;
             }
             baseDeDatos[upcActivo].qty = Math.max(0, baseDeDatos[upcActivo].qty + cambio);
@@ -494,7 +518,11 @@
             ['Semana', 'Mes', 'Ano'].forEach(tipo => {
                 if(itemCharts[tipo.toLowerCase()]) itemCharts[tipo.toLowerCase()].destroy();
                 const ctx = document.getElementById(`itemChart${tipo}`).getContext('2d');
-                itemCharts[tipo.toLowerCase()] = new Chart(ctx, { type: 'line', data: { labels: ['Sin Datos'], datasets: [{ data: [0] }] }, options: { responsive: true, maintainAspectRatio: false } });
+                itemCharts[tipo.toLowerCase()] = new Chart(ctx, { 
+                    type: 'line', 
+                    data: { labels: ['Sin Datos'], datasets: [{ data: [0], borderColor: '#cbd5e1' }] }, 
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } 
+                });
             });
         }
 
@@ -503,7 +531,7 @@
             const filtrado = historialUso.filter(h => h.upc === upcActivo);
             const hoy = new Date();
 
-            // 1. SEMANA
+            // 1. SEMANA ITEM
             if(itemCharts.semana) itemCharts.semana.destroy();
             let labelsSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
             let dataSemana = [0,0,0,0,0,0,0];
@@ -517,7 +545,7 @@
             });
             itemCharts.semana = crearBarChart('itemChartSemana', labelsSemana, dataSemana, '#3276cd');
 
-            // 2. MES
+            // 2. MES ITEM
             if(itemCharts.mes) itemCharts.mes.destroy();
             let labelsMes = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'];
             let dataMes = [0,0,0,0];
@@ -531,7 +559,7 @@
             });
             itemCharts.mes = crearBarChart('itemChartMes', labelsMes, dataMes, '#3276cd');
 
-            // 3. AÑO
+            // 3. AÑO ITEM
             if(itemCharts.ano) itemCharts.ano.destroy();
             let labelsAno = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
             let dataAno = Array(12).fill(0);
@@ -562,7 +590,7 @@
                     else if (filtro === 'mes' && d.getMonth() === hoy.getMonth() && d.getFullYear() === hoy.getFullYear()) valido = true;
                     else if (filtro === 'ano' && d.getFullYear() === hoy.getFullYear()) valido = true;
 
-                    if (valido) {
+                    if (valide = valido) {
                         conteoProductos[h.upc] = (conteoProductos[h.upc] || 0) + h.cantidad;
                     }
                 });
@@ -577,7 +605,9 @@
                 if(labels.length === 0) { labels = ['Sin Datos']; data = [0]; }
 
                 const canvasId = `globalChart${filtro.charAt(0).toUpperCase() + filtro.slice(1)}`;
-                const ctx = document.getElementById(canvasId).getContext('2d');
+                const el = document.getElementById(canvasId);
+                if (!el) return;
+                const ctx = el.getContext('2d');
                 globalCharts[filtro] = new Chart(ctx, {
                     type: 'bar',
                     data: {
@@ -594,9 +624,11 @@
             });
         }
 
-        // Helper genérico para crear gráficos de barra verticales
+        // Helper genérico para gráficos de barras
         function crearBarChart(canvasId, labels, data, color) {
-            const ctx = document.getElementById(canvasId).getContext('2d');
+            const el = document.getElementById(canvasId);
+            if (!el) return null;
+            const ctx = el.getContext('2d');
             return new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -606,6 +638,65 @@
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
         }
+
+        // ==========================================
+        // SINCRONIZACIÓN CON CLOUDFLARE WORKER
+        // ==========================================
+        async function sincronizarConWorker() {
+            const btnSincro = document.getElementById('btn-sync');
+            if (btnSincro) {
+                btnSincro.disabled = true;
+                btnSincro.innerText = "SINCRO...";
+            }
+
+            try {
+                // Reemplaza con la URL correspondiente de tu Worker
+                const resDB = await fetch('https://tu-worker.cloudflare.workers.dev/api/database', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(baseDeDatos)
+                });
+                
+                const resHistorial = await fetch('https://tu-worker.cloudflare.workers.dev/api/history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(historialUso)
+                });
+
+                if (resDB.ok && resHistorial.ok) {
+                    alert("Sincronización en la nube procesada de forma exitosa.");
+                } else {
+                    alert("El servidor del Worker retornó un estado erróneo.");
+                }
+            } catch (error) {
+                console.error("Error de red:", error);
+                alert("Cambios respaldados de forma local. No se pudo conectar al Worker.");
+            } finally {
+                if (btnSincro) {
+                    btnSincro.disabled = false;
+                    btnSincro.innerText = "SINCRONIZAR CLOUD";
+                }
+            }
+        }
+
+        // ==========================================
+        // INICIALIZACIÓN GENERAL DEL DOM
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            baseDeDatos = JSON.parse(localStorage.getItem('wm_ims_database')) || {};
+            historialUso = JSON.parse(localStorage.getItem('wm_ims_history')) || [];
+            
+            inicializarSelectBins();
+            renderBinsExistentes();
+            renderTodosLosGraficosGlobales();
+
+            const formRegistro = document.getElementById('product-form');
+            if (formRegistro) {
+                formRegistro.addEventListener('submit', registrarProducto);
+            }
+            
+            navegarA('home');
+        });
     </script>
 </body>
 </html>
