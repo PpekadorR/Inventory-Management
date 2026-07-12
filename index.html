@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Walmart IMS - Lider Chile</title>
+    <title>Inventory Managementy</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- Chart.js -->
@@ -42,7 +42,7 @@
         <div class="flex items-center gap-2">
             <div class="w-2.5 h-2.5 bg-[#ffc220] rounded-full animate-pulse"></div>
             <h1 class="font-black text-lg tracking-tight flex items-center gap-1">
-                Walmart <span class="text-[#ffc220] font-medium text-sm px-1.5 py-0.5 bg-white/10 rounded">IMS Chile</span>
+                Inventory Management <span class="text-[#ffc220] font-medium text-sm px-1.5 py-0.5 bg-white/10 rounded">PekaOS</span>
             </h1>
         </div>
         <button id="btn-sync" onclick="sincronizarConWorker()" class="bg-[#ffc220] hover:bg-[#e0aa1c] text-gray-900 text-xs font-black px-3 py-1.5 rounded shadow-sm transition-all active:scale-95 uppercase">
@@ -67,7 +67,7 @@
                 
                 <div id="area-scan-central" class="mt-4">
                     <button onclick="iniciarCamara()" class="w-full bg-[#ffc220] text-gray-900 py-3.5 rounded-xl font-black text-sm shadow-md flex items-center justify-center gap-2 active:bg-[#e5ae1a] border border-[#ffc220] transition-transform active:scale-[0.99]">
-                        📷 INICIAR ESCÁNER DE CÁMARA
+                         INICIAR ESCÁNER DE CÁMARA
                     </button>
                 </div>
             </div>
@@ -134,7 +134,7 @@
                 
                 <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-700/60 text-center">
                     <div>
-                        <span class="block text-[9px] text-slate-400 uppercase font-bold tracking-wider">Precio Lider</span>
+                        <span class="block text-[9px] text-slate-400 uppercase font-bold tracking-wider">Media Precio Retail</span>
                         <span id="view-price" class="text-sm font-black text-[#ffc220]">$ 0</span>
                     </div>
                     <div>
