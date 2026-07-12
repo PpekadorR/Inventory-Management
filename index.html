@@ -413,7 +413,7 @@
                 return;
             }
 
-            document.getElementById('view-name').innerText = "BUSCANDO EN LIDER.CL...";
+            document.getElementById('view-name').innerText = "BUSCANDO...";
             let precioLider = "1.990";
             if(upc.startsWith("780")) precioLider = (Math.floor(Math.random() * 5) + 1) + ".490"; 
 
@@ -427,7 +427,7 @@
                     let nombre = `${marca} ${desc}`.toUpperCase().substring(0,30);
                     
                     document.getElementById('view-name').innerText = nombre;
-                    document.getElementById('view-cat').innerText = "COMESTIBLES / LIDER";
+                    document.getElementById('view-cat').innerText = "COMESTIBLES";
                     document.getElementById('view-price').innerText = `$ ${precioLider}`;
                     document.getElementById('view-upc').innerText = upc;
                     document.getElementById('view-size').innerText = p.quantity || "1 UN";
