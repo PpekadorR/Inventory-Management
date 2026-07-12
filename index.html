@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -38,10 +39,6 @@
         #reader video {
             object-fit: cover !important;
             border-radius: 8px;
-        }
-        .tab-btn.active {
-            border-bottom-color: #3276cd;
-            color: #3276cd;
         }
     </style>
 </head>
@@ -98,13 +95,14 @@
                     <span>Section Work</span>
                     <span class="text-gray-400 font-bold">&#10095;</span>
                 </div>
-                <!-- NUEVO MANEJADOR DE MÉTRICAS GLOBALES -->
+                <!-- CAMBIO DE NOMBRE A GRÁFICOS INFORMATIVOS -->
                 <div onclick="abrirMetricasGlobales()" class="px-4 py-4 flex justify-between items-center active:bg-gray-50 cursor-pointer wm-text-blue font-bold">
-                    <span>Modular/Aisle Maintenance</span>
+                    <span>Gráficos informativos</span>
                     <span class="text-gray-400 font-bold">&#10095;</span>
                 </div>
+                <!-- CAMBIO DE NOMBRE A UBICACIONES Y ESTANTERÍAS -->
                 <div onclick="abrirShelfAvailability()" class="px-4 py-4 flex justify-between items-center active:bg-gray-50 cursor-pointer text-emerald-600 font-bold">
-                    <span>Shelf Availability</span>
+                    <span>Ubicaciones y estanterías</span>
                     <span class="text-gray-400 font-bold">&#10095;</span>
                 </div>
             </div>
@@ -141,7 +139,7 @@
                 </div>
             </div>
 
-            <!-- Inventario Limpio (Sin Case Pack ni Shelf Cap) -->
+            <!-- Inventario Limpio -->
             <div class="bg-white rounded-xs shadow-xs border border-gray-200 flex flex-col">
                 <div class="p-3 text-xs font-bold uppercase text-gray-400 tracking-wider">Inventory</div>
                 <div class="grid grid-cols-3 items-center justify-center px-4 py-4 text-center">
@@ -198,23 +196,28 @@
                 </form>
             </div>
 
-            <!-- Métricas Específicas por Producto (3 Pestañas de Tiempo Real) -->
-            <div class="bg-white rounded-xs shadow-xs border border-gray-200 p-4 mb-16">
-                <div class="flex justify-between items-center mb-3">
-                    <div class="text-xs font-bold uppercase text-gray-400 tracking-wider">Métricas de Uso</div>
-                    <div class="flex border border-gray-200 rounded overflow-hidden text-[10px] font-bold uppercase">
-                        <button onclick="cambiarFiltroGraficoItem('semana')" id="btn-item-semana" class="tab-btn px-2.5 py-1 bg-gray-50 border-r border-gray-200 active">Semana</button>
-                        <button onclick="cambiarFiltroGraficoItem('mes')" id="btn-item-mes" class="tab-btn px-2.5 py-1 bg-gray-50 border-r border-gray-200">Mes</button>
-                        <button onclick="cambiarFiltroGraficoItem('ano')" id="btn-item-ano" class="tab-btn px-2.5 py-1 bg-gray-50">Año</button>
-                    </div>
+            <!-- TRES GRÁFICOS SEPARADOS PARA EL ITEM (UNO BAJO EL OTRO) -->
+            <div class="bg-white rounded-xs shadow-xs border border-gray-200 p-4 space-y-6 mb-16">
+                <div>
+                    <div class="text-xs font-bold uppercase text-gray-400 tracking-wider mb-2">Uso en la Semana</div>
+                    <div class="h-40 w-full"><canvas id="itemChartSemana"></canvas></div>
                 </div>
-                <div class="h-40 w-full"><canvas id="itemChart"></canvas></div>
+                <hr class="border-gray-100">
+                <div>
+                    <div class="text-xs font-bold uppercase text-gray-400 tracking-wider mb-2">Uso en el Mes</div>
+                    <div class="h-40 w-full"><canvas id="itemChartMes"></canvas></div>
+                </div>
+                <hr class="border-gray-100">
+                <div>
+                    <div class="text-xs font-bold uppercase text-gray-400 tracking-wider mb-2">Uso en el Año</div>
+                    <div class="h-40 w-full"><canvas id="itemChartAno"></canvas></div>
+                </div>
             </div>
         </main>
     </div>
 
     <!-- ========================================== -->
-    <!-- VISTA 3: SHELF AVAILABILITY (UBICACIONES)  -->
+    <!-- VISTA 3: UBICACIONES Y ESTANTERÍAS         -->
     <!-- ========================================== -->
     <div id="page-shelf" class="page min-h-[calc(100vh-20px)]">
         <header class="wm-navbar text-white px-3 py-3.5 shadow-sm flex items-center sticky top-0 z-50">
@@ -228,24 +231,26 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- VISTA 4: MAINTENANCE (MÉTRICAS GLOBALES)   -->
+    <!-- VISTA 4: GRÁFICOS INFORMATIVOS (MÉTRICAS)  -->
     <!-- ========================================== -->
     <div id="page-maintenance" class="page min-h-[calc(100vh-20px)]">
         <header class="wm-navbar text-white px-3 py-3.5 shadow-sm flex items-center sticky top-0 z-50">
             <button onclick="navegarA('home')" class="active:opacity-60 mr-5"><svg class="w-6 h-6 stroke-current stroke-2" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></button>
-            <h1 class="text-xl font-medium tracking-wide">Mantenimiento de Góndolas</h1>
+            <h1 class="text-xl font-medium tracking-wide">Gráficos informativos</h1>
         </header>
-        <main class="flex-1 max-w-md mx-auto w-full bg-[#f4f5f7] p-3 space-y-4">
+        <main class="flex-1 max-w-md mx-auto w-full bg-[#f4f5f7] p-3 space-y-4 pb-16">
+            <!-- TRES GRÁFICOS GLOBALES SEPARADOS (UNO BAJO EL OTRO) -->
             <div class="bg-white rounded border border-gray-200 p-4 shadow-sm">
-                <div class="flex justify-between items-center mb-3">
-                    <div class="text-xs font-bold uppercase text-gray-500 tracking-wider">Productos más utilizados</div>
-                    <div class="flex border border-gray-200 rounded overflow-hidden text-[10px] font-bold uppercase">
-                        <button onclick="cambiarFiltroGraficoGlobal('semana')" id="btn-global-semana" class="tab-btn px-2.5 py-1 bg-gray-50 border-r border-gray-200 active">Semana</button>
-                        <button onclick="cambiarFiltroGraficoGlobal('mes')" id="btn-global-mes" class="tab-btn px-2.5 py-1 bg-gray-50 border-r border-gray-200">Mes</button>
-                        <button onclick="cambiarFiltroGraficoGlobal('ano')" id="btn-global-ano" class="tab-btn px-2.5 py-1 bg-gray-50">Año</button>
-                    </div>
-                </div>
-                <div class="h-64 w-full"><canvas id="globalChart"></canvas></div>
+                <div class="text-xs font-bold uppercase text-gray-500 tracking-wider mb-2">Más utilizados: Esta Semana</div>
+                <div class="h-48 w-full"><canvas id="globalChartSemana"></canvas></div>
+            </div>
+            <div class="bg-white rounded border border-gray-200 p-4 shadow-sm">
+                <div class="text-xs font-bold uppercase text-gray-500 tracking-wider mb-2">Más utilizados: Este Mes</div>
+                <div class="h-48 w-full"><canvas id="globalChartMes"></canvas></div>
+            </div>
+            <div class="bg-white rounded border border-gray-200 p-4 shadow-sm">
+                <div class="text-xs font-bold uppercase text-gray-500 tracking-wider mb-2">Más utilizados: Este Año</div>
+                <div class="h-48 w-full"><canvas id="globalChartAno"></canvas></div>
             </div>
         </main>
     </div>
@@ -259,9 +264,7 @@
     </div>
 
     <script>
-        // DB Principal
         let baseDeDatos = JSON.parse(localStorage.getItem('wm_ims_database')) || {};
-        // Historial persistente para el cálculo de gráficos reales
         let historialUso = JSON.parse(localStorage.getItem('wm_ims_history')) || [];
 
         const diccionarioLimpiezaHogar = [
@@ -273,16 +276,15 @@
 
         const binsPorDefecto = ["ESTANTE A-1", "ESTANTE B-3", "DESPENSA ALTA", "REFRIGERADOR", "PASILLO LIMPIEZA", "SECTOR ASEO HOGAR"];
         let upcActivo = null;
-        let itemChartInstance = null;
-        let globalChartInstance = null;
+        
+        // Instancias de gráficos individuales e independientes
+        let itemCharts = { semana: null, mes: null, ano: null };
+        let globalCharts = { semana: null, mes: null, ano: null };
+        
         let html5QrcodeScanner = null;
         let origenNavegacion = 'home';
-        let filtroItemActual = 'semana';
-        let filtroGlobalActual = 'semana';
 
-        document.addEventListener("DOMContentLoaded", () => {
-            initClock();
-        });
+        document.addEventListener("DOMContentLoaded", () => { initClock(); });
 
         function initClock() {
             const updateClock = () => {
@@ -301,17 +303,8 @@
         }
 
         function volverDesdeDetalle() { navegarA(origenNavegacion); }
-
-        function abrirShelfAvailability() {
-            origenNavegacion = 'shelf';
-            navegarA('shelf');
-            renderListaUbicaciones();
-        }
-
-        function abrirMetricasGlobales() {
-            navegarA('maintenance');
-            setTimeout(() => { actualizarGraficoGlobal(); }, 100);
-        }
+        function abrirShelfAvailability() { origenNavegacion = 'shelf'; navegarA('shelf'); renderListaUbicaciones(); }
+        function abrirMetricasGlobales() { navegarA('maintenance'); setTimeout(() => { renderTodosLosGraficosGlobales(); }, 100); }
 
         function renderListaUbicaciones() {
             document.getElementById('shelf-title').innerText = "Ubicaciones (Bins)";
@@ -394,7 +387,6 @@
                 return;
             }
 
-            // Simulación exacta del scraper de precios líder.cl basado en UPC de Chile
             document.getElementById('view-name').innerText = "BUSCANDO EN LIDER.CL...";
             let precioLider = "1.990";
             if(upc.startsWith("780")) precioLider = (Math.floor(Math.random() * 5) + 1) + ".490"; 
@@ -414,7 +406,6 @@
                     document.getElementById('view-upc').innerText = upc;
                     document.getElementById('view-size').innerText = p.quantity || "1 UN";
                     document.getElementById('view-color').innerText = "CL";
-                    
                     document.getElementById('form-name').value = nombre;
                     document.getElementById('form-price').value = precioLider;
                 } else {
@@ -430,7 +421,7 @@
             } catch(e) {
                 document.getElementById('view-name').innerText = "MODO LOCAL / OFFLINE";
             }
-            limpiarGraficoItem();
+            limpiarGraficosItem();
         }
 
         function renderFichaFalsaLimpieza(upc, obj) {
@@ -442,7 +433,7 @@
             document.getElementById('view-color').innerText = "CL";
             document.getElementById('form-name').value = obj.nombre;
             document.getElementById('form-price').value = obj.precio;
-            limpiarGraficoItem();
+            limpiarGraficosItem();
         }
 
         function renderProducto(upc) {
@@ -458,7 +449,7 @@
             document.getElementById('stock-onhand').innerText = item.qty;
             document.getElementById('form-name').value = item.name;
             document.getElementById('form-price').value = item.price;
-            actualizarGraficoItem();
+            renderTodosLosGraficosItem();
         }
 
         function registrarProducto(e) {
@@ -485,7 +476,6 @@
             }
             baseDeDatos[upcActivo].qty = Math.max(0, baseDeDatos[upcActivo].qty + cambio);
             
-            // REGISTRO DE USO REAL CON FECHA ACTUAL
             historialUso.push({
                 upc: upcActivo,
                 fecha: new Date().toISOString(),
@@ -498,137 +488,122 @@
         }
 
         // ==========================================
-        // SISTEMA DE MÉTRICAS EN TIEMPO REAL
+        // RENDER DE TRES GRÁFICOS INDEPENDIENTES (ITEM)
         // ==========================================
-        function cambiarFiltroGraficoItem(tipo) {
-            filtroItemActual = tipo;
-            document.querySelectorAll('#page-detail .tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`btn-item-${tipo}`).classList.add('active');
-            actualizarGraficoItem();
+        function limpiarGraficosItem() {
+            ['Semana', 'Mes', 'Ano'].forEach(tipo => {
+                if(itemCharts[tipo.toLowerCase()]) itemCharts[tipo.toLowerCase()].destroy();
+                const ctx = document.getElementById(`itemChart${tipo}`).getContext('2d');
+                itemCharts[tipo.toLowerCase()] = new Chart(ctx, { type: 'line', data: { labels: ['Sin Datos'], datasets: [{ data: [0] }] }, options: { responsive: true, maintainAspectRatio: false } });
+            });
         }
 
-        function limpiarGraficoItem() {
-            if(itemChartInstance) itemChartInstance.destroy();
-            const ctx = document.getElementById('itemChart').getContext('2d');
-            itemChartInstance = new Chart(ctx, { type: 'line', data: { labels: ['Sin Datos'], datasets: [{ data: [0] }] }, options: { responsive: true, maintainAspectRatio: false } });
-        }
-
-        function actualizarGraficoItem() {
+        function renderTodosLosGraficosItem() {
             if(!upcActivo) return;
-            if(itemChartInstance) itemChartInstance.destroy();
-
             const filtrado = historialUso.filter(h => h.upc === upcActivo);
-            let labels = [];
-            let data = [];
-
             const hoy = new Date();
 
-            if(filtroItemActual === 'semana') {
-                labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-                data = [0,0,0,0,0,0,0];
-                filtrado.forEach(h => {
-                    let d = new Date(h.fecha);
-                    if((hoy - d) / (1000*60*60*24) <= 7) {
-                        let day = d.getDay(); 
-                        let idx = day === 0 ? 6 : day - 1; // Ajustar domingo
-                        data[idx] += h.cantidad;
-                    }
-                });
-            } else if(filtroItemActual === 'mes') {
-                labels = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'];
-                data = [0,0,0,0];
-                filtrado.forEach(h => {
-                    let d = new Date(h.fecha);
-                    if(d.getMonth() === hoy.getMonth() && d.getFullYear() === hoy.getFullYear()) {
-                        let date = d.getDate();
-                        let idx = Math.min(3, Math.floor((date - 1) / 7));
-                        data[idx] += h.cantidad;
-                    }
-                });
-            } else {
-                labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-                data = Array(12).fill(0);
-                filtrado.forEach(h => {
-                    let d = new Date(h.fecha);
-                    if(d.getFullYear() === hoy.getFullYear()) {
-                        data[d.getMonth()] += h.cantidad;
-                    }
-                });
-            }
+            // 1. SEMANA
+            if(itemCharts.semana) itemCharts.semana.destroy();
+            let labelsSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+            let dataSemana = [0,0,0,0,0,0,0];
+            filtrado.forEach(h => {
+                let d = new Date(h.fecha);
+                if((hoy - d) / (1000*60*60*24) <= 7) {
+                    let day = d.getDay(); 
+                    let idx = day === 0 ? 6 : day - 1;
+                    dataSemana[idx] += h.cantidad;
+                }
+            });
+            itemCharts.semana = crearBarChart('itemChartSemana', labelsSemana, dataSemana, '#3276cd');
 
-            const ctx = document.getElementById('itemChart').getContext('2d');
-            itemChartInstance = new Chart(ctx, {
+            // 2. MES
+            if(itemCharts.mes) itemCharts.mes.destroy();
+            let labelsMes = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'];
+            let dataMes = [0,0,0,0];
+            filtrado.forEach(h => {
+                let d = new Date(h.fecha);
+                if(d.getMonth() === hoy.getMonth() && d.getFullYear() === hoy.getFullYear()) {
+                    let date = d.getDate();
+                    let idx = Math.min(3, Math.floor((date - 1) / 7));
+                    dataMes[idx] += h.cantidad;
+                }
+            });
+            itemCharts.mes = crearBarChart('itemChartMes', labelsMes, dataMes, '#3276cd');
+
+            // 3. AÑO
+            if(itemCharts.ano) itemCharts.ano.destroy();
+            let labelsAno = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            let dataAno = Array(12).fill(0);
+            filtrado.forEach(h => {
+                let d = new Date(h.fecha);
+                if(d.getFullYear() === hoy.getFullYear()) {
+                    dataAno[d.getMonth()] += h.cantidad;
+                }
+            });
+            itemCharts.ano = crearBarChart('itemChartAno', labelsAno, dataAno, '#3276cd');
+        }
+
+        // ==========================================
+        // RENDER DE TRES GRÁFICOS INDEPENDIENTES (GLOBAL)
+        // ==========================================
+        function renderTodosLosGraficosGlobales() {
+            const hoy = new Date();
+
+            ['semana', 'mes', 'ano'].forEach(filtro => {
+                if(globalCharts[filtro]) globalCharts[filtro].destroy();
+
+                let conteoProductos = {};
+                historialUso.forEach(h => {
+                    let d = new Date(h.fecha);
+                    let valido = false;
+
+                    if (filtro === 'semana' && (hoy - d) / (1000*60*60*24) <= 7) valido = true;
+                    else if (filtro === 'mes' && d.getMonth() === hoy.getMonth() && d.getFullYear() === hoy.getFullYear()) valido = true;
+                    else if (filtro === 'ano' && d.getFullYear() === hoy.getFullYear()) valido = true;
+
+                    if (valido) {
+                        conteoProductos[h.upc] = (conteoProductos[h.upc] || 0) + h.cantidad;
+                    }
+                });
+
+                let ordenados = Object.keys(conteoProductos).map(upc => {
+                    return { name: baseDeDatos[upc]?.name || `UPC ${upc}`, cant: conteoProductos[upc] };
+                }).sort((a,b) => b.cant - a.cant).slice(0, 5);
+
+                let labels = ordenados.map(o => o.name);
+                let data = ordenados.map(o => o.cant);
+
+                if(labels.length === 0) { labels = ['Sin Datos']; data = [0]; }
+
+                const canvasId = `globalChart${filtro.charAt(0).toUpperCase() + filtro.slice(1)}`;
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                globalCharts[filtro] = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{ data: data, backgroundColor: '#f2b735', borderRadius: 4 }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            });
+        }
+
+        // Helper genérico para crear gráficos de barra verticales
+        function crearBarChart(canvasId, labels, data, color) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            return new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: 'Unidades Movidas',
-                        data: data,
-                        backgroundColor: '#3276cd',
-                        borderRadius: 4
-                    }]
+                    datasets: [{ data: data, backgroundColor: color, borderRadius: 4 }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
-        }
-
-        // ==========================================
-        // SECCIÓN METRICAS GLOBALES (MODULAR)
-        // ==========================================
-        function cambiarFiltroGraficoGlobal(tipo) {
-            filtroGlobalActual = tipo;
-            document.querySelectorAll('#page-maintenance .tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`btn-global-${tipo}`).classList.add('active');
-            actualizarGraficoGlobal();
-        }
-
-        function actualizarGraficoGlobal() {
-            if(globalChartInstance) globalChartInstance.destroy();
-
-            const hoy = new Date();
-            let conteoProductos = {};
-
-            // Filtrar según el rango seleccionado
-            historialUso.forEach(h => {
-                let d = new Date(h.fecha);
-                let valido = false;
-
-                if (filtroGlobalActual === 'semana' && (hoy - d) / (1000*60*60*24) <= 7) valido = true;
-                else if (filtroGlobalActual === 'mes' && d.getMonth() === hoy.getMonth() && d.getFullYear() === hoy.getFullYear()) valido = true;
-                else if (filtroGlobalActual === 'ano' && d.getFullYear() === hoy.getFullYear()) valido = true;
-
-                if (valido) {
-                    conteoProductos[h.upc] = (conteoProductos[h.upc] || 0) + h.cantidad;
-                }
-            });
-
-            // Ordenar los productos más top
-            let ordenados = Object.keys(conteoProductos).map(upc => {
-                return { name: baseDeDatos[upc]?.name || `UPC ${upc}`, cant: conteoProductos[upc] };
-            }).sort((a,b) => b.cant - a.cant).slice(0, 5);
-
-            let labels = ordenados.map(o => o.name);
-            let data = ordenados.map(o => o.cant);
-
-            if(labels.length === 0) { labels = ['Sin Datos']; data = [0]; }
-
-            const ctx = document.getElementById('globalChart').getContext('2d');
-            globalChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: '#f2b735',
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }
-                }
             });
         }
     </script>
