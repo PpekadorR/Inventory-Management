@@ -1,6 +1,6 @@
 {
   "name": "My Inventory Management",
-  "short_name": "Inventario",
+  "short_name": "My Inventory Management",
   "start_url": "/Inventory-Management/",
   "display": "standalone",
   "background_color": "#ffffff",
