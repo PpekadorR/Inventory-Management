@@ -404,59 +404,74 @@
             procesarBusquedaManualOEscaneo(upc);
         }
 
-        async function procesarBusquedaManualOEscaneo(upc) {
-            upcActivo = upc;
-            navegarA('detail');
+        async function procesarBusquedaManualOEscaneo(valor) {
+    // 1. ¿Es un código UPC existente? (Búsqueda inmediata)
+    if(baseDeDatos[valor]) {
+        upcActivo = valor;
+        renderProducto(upcActivo);
+        navegarA('detail');
+        return;
+    }
 
-            if(baseDeDatos[upc]) {
-                renderProducto(upc);
-                return;
-            }
+    // 2. ¿Es un número de "Item #" existente? (Búsqueda en base de datos)
+    const encontradoPorItem = Object.values(baseDeDatos).find(p => p.color === valor);
+    if(encontradoPorItem) {
+        upcActivo = encontradoPorItem.upc;
+        renderProducto(upcActivo);
+        navegarA('detail');
+        return;
+    }
 
-            const coincidenciaLimpieza = diccionarioLimpiezaHogar.find(item => upc.toLowerCase().includes(item.clave));
-            if(coincidenciaLimpieza) {
-                renderFichaFalsaLimpieza(upc, coincidenciaLimpieza);
-                return;
-            }
+    // --- Si no se encontró nada localmente, procedemos a la búsqueda API ---
+    upcActivo = valor; 
+    navegarA('detail');
 
-            document.getElementById('view-name').innerText = "BUSCANDO...";
-            let precioLider = "1.990";
-            if(upc.startsWith("780")) precioLider = (Math.floor(Math.random() * 5) + 1) + ".490"; 
+    // Verificar si está en el diccionario offline de limpieza
+    const coincidenciaLimpieza = diccionarioLimpiezaHogar.find(item => valor.toLowerCase().includes(item.clave));
+    if(coincidenciaLimpieza) {
+        renderFichaFalsaLimpieza(valor, coincidenciaLimpieza);
+        return;
+    }
 
-            try {
-                const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${upc}.json`);
-                const data = await res.json();
-                if(data.status === 1 && data.product) {
-                    const p = data.product;
-                    const marca = p.brands ? p.brands.split(',')[0] : "";
-                    const desc = p.product_name_es || p.product_name || "PRODUCTO";
-                    let nombre = `${marca} ${desc}`.toUpperCase().substring(0,30);
-                    
-                    document.getElementById('view-name').innerText = nombre;
-                    document.getElementById('view-cat').innerText = "COMESTIBLES";
-                    document.getElementById('view-price').innerText = `$ ${precioLider}`;
-                    document.getElementById('view-upc').innerText = upc;
-                    document.getElementById('view-size').innerText = p.quantity || "1 UN";
-                    document.getElementById('view-item').innerText = "0"; // Reset Item #
-                    document.getElementById('form-name').value = nombre;
-                    document.getElementById('form-price').value = precioLider;
-                    document.getElementById('form-item').value = ""; // Reset form item
-                } else {
-                    document.getElementById('view-name').innerText = "PRODUCTO NUEVO";
-                    document.getElementById('view-cat').innerText = "SALA / TIENDA";
-                    document.getElementById('view-price').innerText = `$ ${precioLider}`;
-                    document.getElementById('view-upc').innerText = upc;
-                    document.getElementById('view-size').innerText = "1 UN";
-                    document.getElementById('view-item').innerText = "0";
-                    document.getElementById('form-name').value = "";
-                    document.getElementById('form-price').value = precioLider;
-                    document.getElementById('form-item').value = "";
-                }
-            } catch(e) {
-                document.getElementById('view-name').innerText = "MODO LOCAL / OFFLINE";
-            }
-            limpiarGraficosItem();
+    document.getElementById('view-name').innerText = "BUSCANDO...";
+    let precioLider = "1.990";
+    if(valor.startsWith("780")) precioLider = (Math.floor(Math.random() * 5) + 1) + ".490"; 
+
+    try {
+        const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${valor}.json`);
+        const data = await res.json();
+        if(data.status === 1 && data.product) {
+            const p = data.product;
+            const marca = p.brands ? p.brands.split(',')[0] : "";
+            const desc = p.product_name_es || p.product_name || "PRODUCTO";
+            let nombre = `${marca} ${desc}`.toUpperCase().substring(0,30);
+            
+            document.getElementById('view-name').innerText = nombre;
+            document.getElementById('view-cat').innerText = "COMESTIBLES";
+            document.getElementById('view-price').innerText = `$ ${precioLider}`;
+            document.getElementById('view-upc').innerText = valor;
+            document.getElementById('view-size').innerText = p.quantity || "1 UN";
+            document.getElementById('view-item').innerText = "0"; 
+            document.getElementById('form-name').value = nombre;
+            document.getElementById('form-price').value = precioLider;
+            document.getElementById('form-item').value = ""; 
+        } else {
+            document.getElementById('view-name').innerText = "PRODUCTO NUEVO";
+            document.getElementById('view-cat').innerText = "SALA / TIENDA";
+            document.getElementById('view-price').innerText = `$ ${precioLider}`;
+            document.getElementById('view-upc').innerText = valor;
+            document.getElementById('view-size').innerText = "1 UN";
+            document.getElementById('view-item').innerText = "0";
+            document.getElementById('form-name').value = "";
+            document.getElementById('form-price').value = precioLider;
+            document.getElementById('form-item').value = "";
         }
+    } catch(e) {
+        document.getElementById('view-name').innerText = "MODO LOCAL / OFFLINE";
+    }
+    limpiarGraficosItem();
+        }
+        
 
         function renderFichaFalsaLimpieza(upc, obj) {
             document.getElementById('view-name').innerText = obj.nombre;
