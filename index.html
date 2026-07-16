@@ -143,10 +143,10 @@
                         <span id="view-size" class="text-xs font-bold text-slate-200 truncate block">--</span>
                     </div>
                     <div>
-                        <div>
-    <span class="block text-[9px] text-slate-400 uppercase font-bold tracking-wider">Item #</span>
-    <span id="view-item" class="text-xs font-bold text-slate-200 block">0</span>
-</div>
+                        <span class="block text-[9px] text-slate-400 uppercase font-bold tracking-wider">Item #</span>
+                        <span id="view-item" class="text-xs font-bold text-slate-200 block">0</span>
+                    </div>
+                </div>
 
                 <div class="mt-4 grid grid-cols-2 gap-2 bg-slate-950/40 p-2.5 rounded-xl border border-slate-700/40 text-center">
                     <div>
@@ -175,19 +175,20 @@
                         <input type="text" id="form-name" required class="w-full bg-white border border-gray-300 px-3 py-2 rounded-lg text-xs font-bold uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
                     <div class="grid grid-cols-3 gap-2">
-    <div>
-        <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Ubicación</label>
-        <select id="form-bin" class="w-full bg-white border border-gray-300 px-3 py-2 rounded-lg text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"></select>
-    </div>
-    <div>
-        <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Precio ($)</label>
-        <input type="text" id="form-price" required class="w-full bg-white border border-gray-300 px-3 py-2 rounded-lg text-xs font-mono text-right focus:ring-2 focus:ring-blue-500 focus:outline-none">
-    </div>
-    <div>
-        <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Item #</label>
-        <input type="number" id="form-item" class="w-full bg-white border border-gray-300 px-3 py-2 rounded-lg text-xs font-bold text-right focus:ring-2 focus:ring-blue-500 focus:outline-none">
-    </div>
-
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Ubicación (Bin)</label>
+                            <select id="form-bin" class="w-full bg-white border border-gray-300 px-3 py-2 rounded-lg text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <!-- Se llena dinámicamente mediante JS -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Precio ($)</label>
+                            <input type="text" id="form-price" required class="w-full bg-white border border-gray-300 px-3 py-2 rounded-lg text-xs font-mono text-right focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Item #</label>
+                            <input type="number" id="form-item" class="w-full bg-white border border-gray-300 px-3 py-2 rounded-lg text-xs font-bold text-right focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
                     </div>
                     <button type="submit" class="w-full bg-blue-600 text-white font-black text-xs py-2.5 rounded-lg shadow uppercase tracking-wider active:bg-blue-700 transition-transform active:scale-[0.99]">
                         Guardar / Actualizar Ficha
@@ -327,6 +328,8 @@
 
         // ==========================================
         // GESTIÓN DE UBICACIONES (BINS) Y PRODUCTOS
+                // ==========================================
+        // GESTIÓN DE UBICACIONES (BINS) Y PRODUCTOS
         // ==========================================
         function renderBinsExistentes() {
             document.getElementById('shelf-title').innerText = "Ubicaciones de Inventario (Bins)";
@@ -434,18 +437,20 @@
                     document.getElementById('view-price').innerText = `$ ${precioLider}`;
                     document.getElementById('view-upc').innerText = upc;
                     document.getElementById('view-size').innerText = p.quantity || "1 UN";
-                    document.getElementById('view-color').innerText = "CL";
+                    document.getElementById('view-item').innerText = "0"; // Reset Item #
                     document.getElementById('form-name').value = nombre;
                     document.getElementById('form-price').value = precioLider;
+                    document.getElementById('form-item').value = ""; // Reset form item
                 } else {
                     document.getElementById('view-name').innerText = "PRODUCTO NUEVO";
                     document.getElementById('view-cat').innerText = "SALA / TIENDA";
                     document.getElementById('view-price').innerText = `$ ${precioLider}`;
                     document.getElementById('view-upc').innerText = upc;
                     document.getElementById('view-size').innerText = "1 UN";
-                    document.getElementById('view-color').innerText = "CL";
+                    document.getElementById('view-item').innerText = "0";
                     document.getElementById('form-name').value = "";
                     document.getElementById('form-price').value = precioLider;
+                    document.getElementById('form-item').value = "";
                 }
             } catch(e) {
                 document.getElementById('view-name').innerText = "MODO LOCAL / OFFLINE";
@@ -454,36 +459,32 @@
         }
 
         function renderFichaFalsaLimpieza(upc, obj) {
-            // Dentro de renderFichaFalsaLimpieza...
-document.getElementById('view-item').innerText = "0";
-document.getElementById('form-item').value = "0";
             document.getElementById('view-name').innerText = obj.nombre;
             document.getElementById('view-cat').innerText = obj.cat;
             document.getElementById('view-price').innerText = `$ ${obj.precio}`;
             document.getElementById('view-upc').innerText = upc;
             document.getElementById('view-size').innerText = obj.formato;
-            document.getElementById('view-color').innerText = "CL";
+            document.getElementById('view-item').innerText = "0";
             document.getElementById('form-name').value = obj.nombre;
             document.getElementById('form-price').value = obj.precio;
+            document.getElementById('form-item').value = "0";
             limpiarGraficosItem();
         }
 
         function renderProducto(upc) {
             const item = baseDeDatos[upc];
-            // Dentro de renderProducto...
-document.getElementById('view-item').innerText = item.color; // Mostramos el dato guardado
-document.getElementById('form-item').value = item.color;    // Cargamos el input
             document.getElementById('view-name').innerText = item.name;
             document.getElementById('view-cat').innerText = item.cat;
             document.getElementById('view-price').innerText = `$ ${item.price}`;
             document.getElementById('view-upc').innerText = item.upc;
             document.getElementById('form-bin').value = item.bin;
             document.getElementById('view-size').innerText = item.size;
-            document.getElementById('view-color').innerText = item.color;
+            document.getElementById('view-item').innerText = item.color; // Muestra el item guardado
             document.getElementById('stock-bin').innerText = item.qty;
             document.getElementById('stock-onhand').innerText = item.qty;
             document.getElementById('form-name').value = item.name;
             document.getElementById('form-price').value = item.price;
+            document.getElementById('form-item').value = item.color; // Carga el input item
             renderTodosLosGraficosItem();
         }
 
@@ -499,7 +500,7 @@ document.getElementById('form-item').value = item.color;    // Cargamos el input
                 qty: baseDeDatos[upcActivo]?.qty || 0,
                 price: document.getElementById('form-price').value,
                 size: document.getElementById('view-size').innerText,
-                color: document.getElementById('form-item').value, // Guardamos el número en la base de datos
+                color: document.getElementById('form-item').value, // GUARDAMOS EL ITEM # AQUÍ
                 cat: document.getElementById('view-cat').innerText
             };
 
@@ -733,6 +734,7 @@ document.getElementById('form-item').value = item.color;    // Cargamos el input
         }
 
         // INICIALIZACIÓN GENERAL DEL DOM
+        // INICIALIZACIÓN GENERAL DEL DOM
         window.addEventListener('DOMContentLoaded', () => {
             inicializarSelectBins();
             navegarA('home');
@@ -746,9 +748,9 @@ document.getElementById('form-item').value = item.color;    // Cargamos el input
         });
     </script>
     <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-  }
-</script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
 </body>
 </html>
