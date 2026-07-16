@@ -143,10 +143,10 @@
                         <span id="view-size" class="text-xs font-bold text-slate-200 truncate block">--</span>
                     </div>
                     <div>
-                        <span class="block text-[9px] text-slate-400 uppercase font-bold tracking-wider">Color/Modo</span>
-                        <span id="view-color" class="text-xs font-bold text-slate-200 block">CL</span>
-                    </div>
-                </div>
+                        <div>
+    <span class="block text-[9px] text-slate-400 uppercase font-bold tracking-wider">Item #</span>
+    <span id="view-item" class="text-xs font-bold text-slate-200 block">0</span>
+</div>
 
                 <div class="mt-4 grid grid-cols-2 gap-2 bg-slate-950/40 p-2.5 rounded-xl border border-slate-700/40 text-center">
                     <div>
@@ -174,17 +174,20 @@
                         <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Nombre Comercial Ajustado</label>
                         <input type="text" id="form-name" required class="w-full bg-white border border-gray-300 px-3 py-2 rounded-lg text-xs font-bold uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Ubicación (Bin)</label>
-                            <select id="form-bin" class="w-full bg-white border border-gray-300 px-3 py-2 rounded-lg text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                                <!-- Se llena dinámicamente mediante JS -->
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Precio ($)</label>
-                            <input type="text" id="form-price" required class="w-full bg-white border border-gray-300 px-3 py-2 rounded-lg text-xs font-mono text-right focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        </div>
+                    <div class="grid grid-cols-3 gap-2">
+    <div>
+        <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Ubicación</label>
+        <select id="form-bin" class="w-full bg-white border border-gray-300 px-3 py-2 rounded-lg text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"></select>
+    </div>
+    <div>
+        <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Precio ($)</label>
+        <input type="text" id="form-price" required class="w-full bg-white border border-gray-300 px-3 py-2 rounded-lg text-xs font-mono text-right focus:ring-2 focus:ring-blue-500 focus:outline-none">
+    </div>
+    <div>
+        <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Item #</label>
+        <input type="number" id="form-item" class="w-full bg-white border border-gray-300 px-3 py-2 rounded-lg text-xs font-bold text-right focus:ring-2 focus:ring-blue-500 focus:outline-none">
+    </div>
+
                     </div>
                     <button type="submit" class="w-full bg-blue-600 text-white font-black text-xs py-2.5 rounded-lg shadow uppercase tracking-wider active:bg-blue-700 transition-transform active:scale-[0.99]">
                         Guardar / Actualizar Ficha
@@ -451,6 +454,9 @@
         }
 
         function renderFichaFalsaLimpieza(upc, obj) {
+            // Dentro de renderFichaFalsaLimpieza...
+document.getElementById('view-item').innerText = "0";
+document.getElementById('form-item').value = "0";
             document.getElementById('view-name').innerText = obj.nombre;
             document.getElementById('view-cat').innerText = obj.cat;
             document.getElementById('view-price').innerText = `$ ${obj.precio}`;
@@ -464,6 +470,9 @@
 
         function renderProducto(upc) {
             const item = baseDeDatos[upc];
+            // Dentro de renderProducto...
+document.getElementById('view-item').innerText = item.color; // Mostramos el dato guardado
+document.getElementById('form-item').value = item.color;    // Cargamos el input
             document.getElementById('view-name').innerText = item.name;
             document.getElementById('view-cat').innerText = item.cat;
             document.getElementById('view-price').innerText = `$ ${item.price}`;
@@ -490,7 +499,7 @@
                 qty: baseDeDatos[upcActivo]?.qty || 0,
                 price: document.getElementById('form-price').value,
                 size: document.getElementById('view-size').innerText,
-                color: document.getElementById('view-color').innerText,
+                color: document.getElementById('form-item').value, // Guardamos el número en la base de datos
                 cat: document.getElementById('view-cat').innerText
             };
 
